@@ -1,0 +1,94 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.properties
+!application.properties
+!application.yml
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Build Artifacts
+target/
+dist/
+build/
+out/
+*.jar
+*.war
+*.ear
+*.zip
+node_modules/
+
+# Logs
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Temporary Files
+*.tmp
+*.bak
+*.swp
+temp/
+tmp/
+
+# OS Specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# Gradle
+.gradle/
+gradle/
+
+# Node/npm
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+
+
+*.md
+# README.md
+
+# IDE Run Configurations
+.run/
+
+# Maven Wrapper
+mvnw.cmd
+mvnw
+
+# Cache
+.cache/
+.eslintcache
+
+# Test Coverage
+coverage/
+.nyc_output/
+
+.md
