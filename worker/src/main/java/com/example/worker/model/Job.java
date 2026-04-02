@@ -1,6 +1,6 @@
-package com.example.backend.model;
+package com.example.worker.model;
 
-import com.example.backend.enums.JobStatus;
+import com.example.worker.enums.JobStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,9 +41,23 @@ public class Job {
 
     private LocalDateTime nextRun;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "created_by")
     private String createdBy;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

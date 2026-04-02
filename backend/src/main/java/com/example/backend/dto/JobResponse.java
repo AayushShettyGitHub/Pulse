@@ -9,6 +9,7 @@ public class JobResponse {
     private JobStatus status;
     private LocalDateTime createdAt;
     private String createdBy;
+    private String result;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -18,4 +19,6 @@ public class JobResponse {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+    public String getResult() { return result; }
+    public void setResult(String result) { this.result = result; }
 }

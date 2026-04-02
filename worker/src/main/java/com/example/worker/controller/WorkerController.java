@@ -1,0 +1,28 @@
+package com.example.worker.controller;
+
+import com.example.worker.service.WorkerService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/worker")
+@RequiredArgsConstructor
+public class WorkerController {
+
+    private final WorkerService workerService;
+
+    @GetMapping("/status")
+    public ResponseEntity<String> getStatus() {
+        return ResponseEntity.ok("Worker is active and polling jobs...");
+    }
+
+    @PostMapping("/trigger")
+    public ResponseEntity<String> triggerJobsManually() {
+        workerService.processPendingJobs();
+        return ResponseEntity.ok("Manual job execution triggered successfully.");
+    }
+}

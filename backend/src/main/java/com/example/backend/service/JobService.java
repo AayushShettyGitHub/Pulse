@@ -52,6 +52,7 @@ public class JobService {
         if (userId != null && !userId.isEmpty()) {
             res.setCreatedBy(userId);
         }
+        res.setResult(job.getResult());
         return res;
     }
 }
