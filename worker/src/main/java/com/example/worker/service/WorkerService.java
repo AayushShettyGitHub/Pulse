@@ -9,11 +9,11 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -23,20 +23,16 @@ public class WorkerService {
     private final JobRepository jobRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Scheduled(fixedDelay = 5000) // Runs every 5 seconds
-    public void processPendingJobs() {
-        log.info("Checking for pending jobs...");
-        List<Job> pendingJobs = jobRepository.findByStatus(JobStatus.PENDING);
-
-        if (pendingJobs.isEmpty()) {
+    @RabbitListener(queues = "jobQueue")
+    public void processJobMessage(String jobIdStr) {
+        log.info("Received job message: {}", jobIdStr);
+        UUID jobId = UUID.fromString(jobIdStr);
+        Job job = jobRepository.findById(jobId).orElse(null);
+        if (job == null) {
+            log.error("Job not found: {}", jobId);
             return;
         }
-
-        log.info("Found {} pending jobs. Processing...", pendingJobs.size());
-
-        for (Job job : pendingJobs) {
-            processJob(job);
-        }
+        processJob(job);
     }
 
     public void processJob(Job job) {
@@ -53,9 +49,14 @@ public class WorkerService {
 
             org.springframework.http.ResponseEntity<String> response = restTemplate.exchange(job.getUrl(), method, entity, String.class);
 
-            job.setResult(response.getBody());
+            String responseBody = response.getBody();
+            if (responseBody == null || responseBody.isBlank()) {
+                job.setResult("HTTP " + response.getStatusCode() + " (No Body)");
+            } else {
+                job.setResult(responseBody);
+            }
             job.setStatus(JobStatus.SUCCESS);
-            log.info("Job {} completed successfully.", job.getId());
+            log.info("Job {} completed successfully with status {}.", job.getId(), response.getStatusCode());
         } catch (Exception e) {
             log.error("Error processing job {}: {}", job.getId(), e.getMessage());
             job.setResult("Error: " + e.getMessage());

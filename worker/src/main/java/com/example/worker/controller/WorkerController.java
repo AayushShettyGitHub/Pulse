@@ -17,12 +17,6 @@ public class WorkerController {
 
     @GetMapping("/status")
     public ResponseEntity<String> getStatus() {
-        return ResponseEntity.ok("Worker is active and polling jobs...");
-    }
-
-    @PostMapping("/trigger")
-    public ResponseEntity<String> triggerJobsManually() {
-        workerService.processPendingJobs();
-        return ResponseEntity.ok("Manual job execution triggered successfully.");
+        return ResponseEntity.ok("Worker is active and listening to queue...");
     }
 }

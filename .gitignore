@@ -3,7 +3,7 @@
 .env.local
 .env.*.local
 *.properties
-!application.properties
+application.properties
 !application.yml
 
 # IDE and Editor
@@ -92,3 +92,4 @@ coverage/
 .nyc_output/
 
 .md
+*.txt
