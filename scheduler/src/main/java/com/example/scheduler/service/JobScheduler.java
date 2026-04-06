@@ -21,8 +21,8 @@ public class JobScheduler {
 
     @Scheduled(fixedDelay = 5000)
     public void scheduleJobs() {
-        log.info("Scheduling pending jobs...");
-        List<Job> pendingJobs = jobRepository.findByStatus(JobStatus.PENDING);
+        log.info("Scheduling pending and due jobs...");
+        List<Job> pendingJobs = jobRepository.findByStatusAndNextRunBefore(JobStatus.PENDING, java.time.LocalDateTime.now());
 
         for (Job job : pendingJobs) {
             job.setStatus(JobStatus.QUEUED);

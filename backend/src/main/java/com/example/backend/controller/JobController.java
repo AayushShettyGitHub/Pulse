@@ -3,6 +3,7 @@ package com.example.backend.controller;
 import com.example.backend.dto.CreateJobRequest;
 import com.example.backend.dto.JobResponse;
 import com.example.backend.service.JobService;
+import com.example.backend.model.JobExecution;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,5 +36,34 @@ public class JobController {
             @PathVariable UUID id,
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         return ResponseEntity.ok(jobService.getJob(id, userId));
+    }
+
+    @GetMapping({"/api/v1/jobs/{id}/history", "/api/jobs/{id}/history"})
+    public ResponseEntity<List<JobExecution>> getJobHistory(
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return ResponseEntity.ok(jobService.getJobHistory(id, userId));
+    }
+
+    @DeleteMapping({"/api/v1/jobs/{id}", "/api/jobs/{id}"})
+    public ResponseEntity<Void> deleteJob(
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        jobService.deleteJob(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping({"/api/v1/jobs/{id}/pause", "/api/jobs/{id}/pause"})
+    public ResponseEntity<JobResponse> pauseJob(
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return ResponseEntity.ok(jobService.pauseJob(id, userId));
+    }
+
+    @PutMapping({"/api/v1/jobs/{id}/resume", "/api/jobs/{id}/resume"})
+    public ResponseEntity<JobResponse> resumeJob(
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return ResponseEntity.ok(jobService.resumeJob(id, userId));
     }
 }

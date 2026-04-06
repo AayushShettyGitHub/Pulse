@@ -11,4 +11,5 @@ import java.util.UUID;
 @Repository
 public interface JobRepository extends JpaRepository<Job, UUID> {
     List<Job> findByStatus(JobStatus status);
+    List<Job> findByStatusAndNextRunBefore(JobStatus status, java.time.LocalDateTime now);
 }

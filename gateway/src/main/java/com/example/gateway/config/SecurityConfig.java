@@ -11,11 +11,18 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
+import java.util.Collections;
 
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
+
+    @Bean
+    public MapReactiveUserDetailsService userDetailsService() {
+        return new MapReactiveUserDetailsService(Collections.emptyList());
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

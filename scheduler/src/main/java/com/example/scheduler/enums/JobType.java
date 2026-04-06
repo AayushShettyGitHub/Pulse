@@ -1,0 +1,6 @@
+package com.example.scheduler.enums;
+
+public enum JobType {
+    HTTP,
+    HEALTH_CHECK
+}

@@ -1,6 +1,7 @@
 package com.example.backend.model;
 
 import com.example.backend.enums.JobStatus;
+import com.example.backend.enums.JobType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,13 @@ public class Job {
     private UUID id;
 
     @Column(nullable = false)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_type")
+    private JobType jobType = JobType.HTTP;
+
+    @Column(nullable = false)
     private String url;
 
     @Column(nullable = false)
@@ -37,13 +45,38 @@ public class Job {
 
     private Integer retries;
 
+    @Column(name = "max_retries")
     private Integer maxRetries;
 
+    @Column(name = "next_run")
     private LocalDateTime nextRun;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "created_by")
     private String createdBy;
+
+    private boolean recurring;
+
+    @Column(name = "interval_minutes")
+    private Long intervalMinutes;
+
+    @Column(name = "ends_at")
+    private LocalDateTime endsAt;
+
+    @Column(name = "max_runs")
+    private Integer maxRuns;
+
+    @Column(name = "runs_count")
+    private Integer runsCount;
+
+    @Column(name = "consecutive_failures")
+    private Integer consecutiveFailures = 0;
+
+    @Column(name = "max_consecutive_failures")
+    private Integer maxConsecutiveFailures;
 }

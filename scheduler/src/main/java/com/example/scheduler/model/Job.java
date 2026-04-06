@@ -1,6 +1,7 @@
 package com.example.scheduler.model;
 
 import com.example.scheduler.enums.JobStatus;
+import com.example.scheduler.enums.JobType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +20,13 @@ public class Job {
     @Id
     @GeneratedValue
     private UUID id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_type")
+    private JobType jobType = JobType.HTTP;
 
     @Column(nullable = false)
     private String url;
@@ -49,6 +57,26 @@ public class Job {
 
     @Column(name = "created_by")
     private String createdBy;
+
+    private boolean recurring;
+
+    @Column(name = "interval_minutes")
+    private Long intervalMinutes;
+
+    @Column(name = "ends_at")
+    private LocalDateTime endsAt;
+
+    @Column(name = "max_runs")
+    private Integer maxRuns;
+
+    @Column(name = "runs_count")
+    private Integer runsCount;
+
+    @Column(name = "consecutive_failures")
+    private Integer consecutiveFailures = 0;
+
+    @Column(name = "max_consecutive_failures")
+    private Integer maxConsecutiveFailures;
 
     @PrePersist
     protected void onCreate() {

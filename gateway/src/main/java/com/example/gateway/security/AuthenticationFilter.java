@@ -13,9 +13,11 @@ import reactor.core.publisher.Mono;
 public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     private final JwtUtil jwtUtil;
+    private final com.example.gateway.repository.UserRepository userRepository;
 
-    public AuthenticationFilter(JwtUtil jwtUtil) {
+    public AuthenticationFilter(JwtUtil jwtUtil, com.example.gateway.repository.UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -49,14 +51,24 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
         String username = jwtUtil.extractUsername(token);
         
-        // Add username to request headers for downstream services
-        ServerWebExchange modifiedExchange = exchange.mutate()
-                .request(exchange.getRequest().mutate()
-                        .header("X-User-Id", username)
-                        .build())
-                .build();
+        // check if user exists in DB
+        return Mono.fromCallable(() -> userRepository.findByUsername(username))
+                .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+                .flatMap(userOpt -> {
+                    if (userOpt.isEmpty()) {
+                        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return exchange.getResponse().setComplete();
+                    }
+                    
+                    // Add username to request headers for downstream services
+                    ServerWebExchange modifiedExchange = exchange.mutate()
+                            .request(exchange.getRequest().mutate()
+                                    .header("X-User-Id", username)
+                                    .build())
+                            .build();
 
-        return chain.filter(modifiedExchange);
+                    return chain.filter(modifiedExchange);
+                });
     }
 
     @Override
