@@ -22,6 +22,7 @@ public class JobResponse {
     private String method;
     private Integer consecutiveFailures;
     private Integer maxConsecutiveFailures;
+    private String timetableJson;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -57,4 +58,6 @@ public class JobResponse {
     public void setConsecutiveFailures(Integer consecutiveFailures) { this.consecutiveFailures = consecutiveFailures; }
     public Integer getMaxConsecutiveFailures() { return maxConsecutiveFailures; }
     public void setMaxConsecutiveFailures(Integer maxConsecutiveFailures) { this.maxConsecutiveFailures = maxConsecutiveFailures; }
+    public String getTimetableJson() { return timetableJson; }
+    public void setTimetableJson(String timetableJson) { this.timetableJson = timetableJson; }
 }

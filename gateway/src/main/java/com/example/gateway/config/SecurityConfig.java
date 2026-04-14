@@ -14,14 +14,26 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collections;
+import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
     @Bean
-    public MapReactiveUserDetailsService userDetailsService() {
-        return new MapReactiveUserDetailsService(Collections.emptyList());
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public MapReactiveUserDetailsService userDetailsService(PasswordEncoder encoder) {
+        UserDetails user = org.springframework.security.core.userdetails.User
+                .builder()
+                .username("user")
+                .password(encoder.encode("password"))
+                .roles("USER")
+                .build();
+        return new MapReactiveUserDetailsService(user);
     }
 
     @Bean

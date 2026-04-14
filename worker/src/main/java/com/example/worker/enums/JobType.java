@@ -2,5 +2,6 @@ package com.example.worker.enums;
 
 public enum JobType {
     HTTP,
-    HEALTH_CHECK
+    HEALTH_CHECK,
+    ATTENDANCE_TRACKER
 }

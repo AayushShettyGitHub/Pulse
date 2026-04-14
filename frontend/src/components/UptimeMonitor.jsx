@@ -178,7 +178,7 @@ export default function UptimeMonitor() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-6">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${
-                      isPaused ? 'bg-gray-100' : isDown ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500'
+                      isPaused ? 'bg-gray-100' : isDown ? 'bg-red-50 text-red-500' : mon.status === 'RETRYING' ? 'bg-amber-50 text-amber-500' : 'bg-green-50 text-green-500'
                     }`}>
                       {isPaused ? (
                         <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
@@ -190,7 +190,7 @@ export default function UptimeMonitor() {
                       <div className="flex items-center gap-3">
                         <h3 className="text-xl font-black text-gray-900">{mon.name}</h3>
                         <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${
-                          isPaused ? 'bg-gray-100 text-gray-500' : isDown ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                          isPaused ? 'bg-gray-100 text-gray-500' : isDown ? 'bg-red-100 text-red-700' : mon.status === 'RETRYING' ? 'bg-amber-100 text-amber-700 animate-pulse' : 'bg-green-100 text-green-700'
                         }`}>
                           {mon.status}
                         </span>

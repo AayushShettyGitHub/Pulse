@@ -69,3 +69,16 @@ export async function resumeJob(id) {
   if (!res.ok) throw new Error("Failed to resume job");
   return res.json();
 }
+
+export async function markAttendance(jobId, records) {
+  const res = await fetch(`http://localhost:8081/api/v1/attendance/${jobId}`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      ...getAuthHeader() 
+    },
+    body: JSON.stringify(records)
+  });
+  if (!res.ok) throw new Error("Failed to mark attendance");
+  return res.json();
+}

@@ -43,10 +43,16 @@ public class Job {
     @Column(columnDefinition = "text")
     private String result;
 
-    private Integer retries;
+    @Column(columnDefinition = "text")
+    private String timetableJson;
+
+    private Integer retries = 0;
 
     @Column(name = "max_retries")
-    private Integer maxRetries;
+    private Integer maxRetries = 3;
+
+    @Column(name = "retry_delay")
+    private Integer retryDelay = 30;
 
     @Column(name = "next_run")
     private LocalDateTime nextRun;
@@ -72,11 +78,27 @@ public class Job {
     private Integer maxRuns;
 
     @Column(name = "runs_count")
-    private Integer runsCount;
+    private Integer runsCount = 0;
 
     @Column(name = "consecutive_failures")
     private Integer consecutiveFailures = 0;
 
     @Column(name = "max_consecutive_failures")
     private Integer maxConsecutiveFailures;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (retries == null) retries = 0;
+        if (maxRetries == null) maxRetries = 3;
+        if (retryDelay == null) retryDelay = 30;
+        if (runsCount == null) runsCount = 0;
+        if (consecutiveFailures == null) consecutiveFailures = 0;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

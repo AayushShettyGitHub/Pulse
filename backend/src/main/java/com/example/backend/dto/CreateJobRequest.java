@@ -11,6 +11,7 @@ public class CreateJobRequest {
     private String payload;
     private Integer maxRetries = 3;
     private String jobType = "HTTP";
+    private String timetableJson;
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -45,4 +46,6 @@ public class CreateJobRequest {
     public void setStartTime(java.time.LocalDateTime startTime) { this.startTime = startTime; }
     public Integer getMaxConsecutiveFailures() { return maxConsecutiveFailures; }
     public void setMaxConsecutiveFailures(Integer maxConsecutiveFailures) { this.maxConsecutiveFailures = maxConsecutiveFailures; }
+    public String getTimetableJson() { return timetableJson; }
+    public void setTimetableJson(String timetableJson) { this.timetableJson = timetableJson; }
 }

@@ -41,6 +41,7 @@ public class JobService {
         job.setEndsAt(request.getEndsAt());
         job.setMaxRuns(request.getMaxRuns());
         job.setMaxConsecutiveFailures(request.getMaxConsecutiveFailures());
+        job.setTimetableJson(request.getTimetableJson());
         job.setRunsCount(0);
         job.setConsecutiveFailures(0);
         Job saved = jobRepository.save(job);
@@ -105,6 +106,7 @@ public class JobService {
         res.setMaxConsecutiveFailures(job.getMaxConsecutiveFailures());
         res.setUrl(job.getUrl());
         res.setMethod(job.getMethod());
+        res.setTimetableJson(job.getTimetableJson());
         return res;
     }
 }

@@ -7,6 +7,7 @@ export default function JobForm({ onJobCreated }) {
   const [method, setMethod] = useState("GET");
   const [payload, setPayload] = useState("");
   const [maxRetries, setMaxRetries] = useState(3);
+  const [retryDelay, setRetryDelay] = useState(30);
   const [isRecurring, setIsRecurring] = useState(false);
   const [intervalMinutes, setIntervalMinutes] = useState("");
   const [maxRuns, setMaxRuns] = useState("");
@@ -26,7 +27,8 @@ export default function JobForm({ onJobCreated }) {
         url,
         method,
         payload,
-        maxRetries,
+        maxRetries: parseInt(maxRetries),
+        retryDelay: parseInt(retryDelay),
         recurring: isRecurring,
         intervalMinutes: isRecurring ? parseInt(intervalMinutes) : null,
         maxRuns: maxRuns ? parseInt(maxRuns) : null,
@@ -40,6 +42,7 @@ export default function JobForm({ onJobCreated }) {
       setMethod("GET");
       setPayload("");
       setMaxRetries(3);
+      setRetryDelay(30);
       setIsRecurring(false);
       setIntervalMinutes("");
       setMaxRuns("");
@@ -110,6 +113,28 @@ export default function JobForm({ onJobCreated }) {
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none"
               value={maxConsecutiveFailures}
               onChange={e => setMaxConsecutiveFailures(e.target.value)}
+            />
+          </div>
+
+          <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+            <label className="block text-sm font-semibold text-indigo-900 mb-2">Max Retries</label>
+            <input 
+              type="number"
+              min="0"
+              className="w-full px-4 py-3 rounded-xl border border-indigo-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={maxRetries}
+              onChange={e => setMaxRetries(e.target.value)}
+            />
+          </div>
+
+          <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+            <label className="block text-sm font-semibold text-indigo-900 mb-2">Retry Delay (Seconds)</label>
+            <input 
+              type="number"
+              min="1"
+              className="w-full px-4 py-3 rounded-xl border border-indigo-100 focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={retryDelay}
+              onChange={e => setRetryDelay(e.target.value)}
             />
           </div>
 

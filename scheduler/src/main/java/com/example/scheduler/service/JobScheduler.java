@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -21,18 +22,18 @@ public class JobScheduler {
 
     @Scheduled(fixedDelay = 5000)
     public void scheduleJobs() {
-        log.info("Scheduling pending and due jobs...");
-        List<Job> pendingJobs = jobRepository.findByStatusAndNextRunBefore(JobStatus.PENDING, java.time.LocalDateTime.now());
+        List<Job> jobs = jobRepository.findByStatusInAndNextRunBefore(
+            Arrays.asList(JobStatus.PENDING, JobStatus.RETRYING), 
+            java.time.LocalDateTime.now()
+        );
 
-        for (Job job : pendingJobs) {
+        for (Job job : jobs) {
             job.setStatus(JobStatus.QUEUED);
             jobRepository.save(job);
             
             try {
                 rabbitTemplate.convertAndSend("jobQueue", job.getId().toString());
-                log.info("Job {} pushed to queue", job.getId());
             } catch (Exception e) {
-                log.error("RabbitMQ error. Reverting job {} to PENDING. Error: {}", job.getId(), e.getMessage());
                 job.setStatus(JobStatus.PENDING);
                 jobRepository.save(job);
             }

@@ -22,6 +22,8 @@ export default function JobList({ refresh }) {
   useEffect(() => {
     setLoading(true);
     fetchJobs();
+    const interval = setInterval(fetchJobs, 10000);
+    return () => clearInterval(interval);
   }, [refresh]);
 
   const viewHistory = async (job) => {
@@ -92,12 +94,15 @@ export default function JobList({ refresh }) {
                 <div className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
                   <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</div>
                   <div className={`text-xs font-black uppercase ${
-                    job.status === 'SUCCESS' ? 'text-green-600' : job.status === 'FAILED' ? 'text-red-500' : 'text-indigo-500'
+                    job.status === 'SUCCESS' ? 'text-green-600' : 
+                    job.status === 'FAILED' ? 'text-red-500' : 
+                    job.status === 'RETRYING' ? 'text-amber-500 animate-pulse' : 
+                    'text-indigo-500'
                   }`}>{job.status}</div>
                 </div>
                 <div className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
-                  <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Runs</div>
-                  <div className="text-xs font-black text-gray-900">{job.runsCount} / {job.maxRuns || '∞'}</div>
+                  <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Retries</div>
+                  <div className="text-xs font-black text-gray-900">{job.retries} / {job.maxRetries}</div>
                 </div>
               </div>
 
@@ -123,6 +128,8 @@ export default function JobList({ refresh }) {
                 <h3 className="text-2xl font-black text-gray-900">{selectedJob.name}</h3>
                 <div className="mt-2 text-[10px] font-black uppercase tracking-wider text-indigo-500 flex items-center gap-4">
                   <span>Failures: {selectedJob.consecutiveFailures} / {selectedJob.maxConsecutiveFailures}</span>
+                  <span className="text-gray-300">|</span>
+                  <span>Retries: {selectedJob.retries} / {selectedJob.maxRetries}</span>
                   <span className="text-gray-300">|</span>
                   <span>Runs: {selectedJob.runsCount} / {selectedJob.maxRuns || '∞'}</span>
                 </div>
