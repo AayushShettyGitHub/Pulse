@@ -43,7 +43,10 @@ public class AuthController {
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
                 .map(user -> {
                     String token = jwtUtil.generateToken(user.getUsername());
-                    return ResponseEntity.ok(Map.of("token", token));
+                    return ResponseEntity.ok(Map.of(
+                        "token", token,
+                        "username", user.getUsername()
+                    ));
                 })
                 .orElse(ResponseEntity.status(401).build());
     }

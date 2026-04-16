@@ -6,46 +6,32 @@ import com.example.worker.model.Job;
 import com.example.worker.model.JobExecution;
 import com.example.worker.repository.JobRepository;
 import com.example.worker.repository.JobExecutionRepository;
+import com.example.worker.strategy.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
-import com.example.worker.model.AttendanceRecord;
-import com.example.worker.repository.AttendanceRepository;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class WorkerService {
 
     private final JobRepository jobRepository;
     private final JobExecutionRepository executionRepository;
-    private final AttendanceRepository attendanceRepository;
     private final EmailService emailService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final HttpExecutor httpExecutor;
+    private final HealthCheckExecutor healthCheckExecutor;
+    private final AttendanceExecutor attendanceExecutor;
 
-    @org.springframework.beans.factory.annotation.Value("${resend.admin.email}")
+    @Value("${resend.admin.email}")
     private String adminEmail;
 
-    public WorkerService(JobRepository jobRepository, JobExecutionRepository executionRepository, 
-                         AttendanceRepository attendanceRepository, EmailService emailService) {
-        this.jobRepository = jobRepository;
-        this.executionRepository = executionRepository;
-        this.attendanceRepository = attendanceRepository;
-        this.emailService = emailService;
-    }
-
-    @RabbitListener(queues = "jobQueue")
-    public void processJobMessage(String jobIdStr) {
-        UUID jobId = UUID.fromString(jobIdStr);
-        Job job = jobRepository.findById(jobId).orElse(null);
-        if (job == null) return;
-        processJob(job);
+    public void processJobById(UUID jobId) {
+        jobRepository.findById(jobId).ifPresent(this::processJob);
     }
 
     public void processJob(Job job) {
@@ -59,15 +45,8 @@ public class WorkerService {
             job.setStatus(JobStatus.RUNNING);
             jobRepository.save(job);
 
-            JobType jobType = (job.getJobType() != null) 
-                ? job.getJobType() 
-                : JobType.HTTP;
-
-            success = switch (jobType) {
-                case HEALTH_CHECK -> executeHealthCheck(job, execution);
-                case ATTENDANCE_TRACKER -> executeAttendanceTracker(job, execution);
-                default -> executeHttp(job, execution);
-            };
+            JobExecutor executor = getExecutor(job.getJobType());
+            success = executor.execute(job, execution);
 
             if (success) {
                 handleSuccess(job);
@@ -75,6 +54,7 @@ public class WorkerService {
                 handleFailure(job);
             }
         } catch (Exception e) {
+            log.error("Job execution failed: {}", e.getMessage());
             handleFailure(job);
             execution.setResult("Fatal Error: " + e.getMessage());
         } finally {
@@ -85,108 +65,13 @@ public class WorkerService {
         }
     }
 
-    private boolean executeHealthCheck(Job job, JobExecution execution) {
-        try {
-            long pingStart = System.currentTimeMillis();
-            ResponseEntity<String> response = restTemplate.exchange(job.getUrl(), HttpMethod.GET, null, String.class);
-            long responseTimeMs = System.currentTimeMillis() - pingStart;
-            
-            execution.setResponseTimeMs(responseTimeMs);
-            execution.setStatusCode(response.getStatusCode().value());
-            execution.setResult("HTTP " + response.getStatusCode().value() + " | " + responseTimeMs + "ms");
-            
-            job.setResult(execution.getResult());
-            return response.getStatusCode().is2xxSuccessful();
-        } catch (Exception e) {
-            execution.setResult("DOWN: " + e.getMessage());
-            execution.setStatusCode(0);
-            job.setResult(execution.getResult());
-            return false;
-        }
-    }
-
-    private boolean executeHttp(Job job, JobExecution execution) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<String> entity = new HttpEntity<>(job.getPayload(), headers);
-            HttpMethod method = HttpMethod.valueOf(job.getMethod().toUpperCase());
-
-            ResponseEntity<String> response = restTemplate.exchange(job.getUrl(), method, entity, String.class);
-            execution.setStatusCode(response.getStatusCode().value());
-            execution.setResult(response.getBody() == null || response.getBody().isBlank() ? "HTTP " + response.getStatusCode() : response.getBody());
-            
-            job.setResult(execution.getResult());
-            return response.getStatusCode().is2xxSuccessful();
-        } catch (Exception e) {
-            execution.setResult("Error: " + e.getMessage());
-            job.setResult(execution.getResult());
-            return false;
-        }
-    }
-
-    private boolean executeAttendanceTracker(Job job, JobExecution execution) {
-        executeAttendancePrompt(job, execution);
-        int reportInterval = (job.getIntervalMinutes() != null && job.getIntervalMinutes() == 0) ? 3 : 7;
-        if (job.getRunsCount() > 0 && job.getRunsCount() % reportInterval == 0) {
-            executeAttendanceReport(job, execution);
-        }
-        return true;
-    }
-
-    private boolean executeAttendancePrompt(Job job, JobExecution execution) {
-        emailService.sendEmail(adminEmail, "Pulse Attendance: Daily Reminder",
-            "<h3>Mark Today's Attendance</h3>" +
-            "<p>Time to log your attendance! If you ignore this, you'll be marked absent for all subjects in your timetable.</p>" +
-            "<a href='http://localhost:5173/attendance?id=" + job.getId() + "' style='background:#6366f1;color:white;padding:12px 24px;border-radius:12px;text-decoration:none;font-weight:bold;'>ENTER STATUS</a>");
-        execution.setResult("Daily prompt sent");
-        return true;
-    }
-
-    private boolean executeAttendanceReport(Job job, JobExecution execution) {
-        LocalDate end = LocalDate.now();
-        LocalDate start = end.minusDays(7);
-        List<AttendanceRecord> records = attendanceRepository.findByJobIdAndDateBetween(job.getId(), start, end);
-        
-        long totalPresent = records.stream().filter(AttendanceRecord::isAttended).count();
-        double overallPercent = records.isEmpty() ? 0 : (double) totalPresent / records.size() * 100;
-
-        StringBuilder tableRows = new StringBuilder();
-        Map<String, List<AttendanceRecord>> bySubject = records.stream()
-            .collect(java.util.stream.Collectors.groupingBy(AttendanceRecord::getSubject));
-
-        bySubject.forEach((subject, subRecords) -> {
-            long subPresent = subRecords.stream().filter(AttendanceRecord::isAttended).count();
-            double subPercent = (double) subPresent / subRecords.size() * 100;
-            String color = subPercent >= 75 ? "#22c55e" : "#ef4444";
-            
-            tableRows.append(String.format(
-                "<tr>" +
-                "<td style='padding:10px;border-bottom:1px solid #eee;'>%s</td>" +
-                "<td style='padding:10px;border-bottom:1px solid #eee;font-weight:bold;color:%s;'>%.1f%%</td>" +
-                "<td style='padding:10px;border-bottom:1px solid #eee;color:#666;'>%d/%d</td>" +
-                "</tr>",
-                subject, color, subPercent, subPresent, subRecords.size()
-            ));
-        });
-
-        String reportHtml = String.format(
-            "<div style='font-family:sans-serif;max-width:500px;margin:auto;border:1px solid #eee;border-radius:16px;padding:20px;'>" +
-            "<h2 style='color:#1e1b4b;margin-bottom:5px;'>Attendance Scorecard</h2>" +
-            "<p style='color:#6366f1;font-weight:bold;margin-top:0;'>OVERALL: %.1f%%</p>" +
-            "<table style='width:100%%;border-collapse:collapse;margin-top:20px;'>" +
-            "<thead><tr style='text-align:left;color:#999;font-size:12px;text-transform:uppercase;'>" +
-            "<th style='padding:10px;'>Subject</th><th style='padding:10px;'>Status</th><th style='padding:10px;'>Count</th>" +
-            "</tr></thead>" +
-            "<tbody>%s</tbody>" +
-            "</table>" +
-            "<p style='font-size:12px;color:#999;margin-top:20px;'>Keep attending classes to stay above 75%%!</p>" +
-            "</div>",
-            overallPercent, tableRows.toString());
-
-        emailService.sendEmail(adminEmail, "Pulse: Detailed Attendance Report", reportHtml);
-        execution.setResult("Detailed report sent. Overall: " + overallPercent + "%");
-        return true;
+    private JobExecutor getExecutor(JobType jobType) {
+        if (jobType == null) return httpExecutor;
+        return switch (jobType) {
+            case HEALTH_CHECK -> healthCheckExecutor;
+            case ATTENDANCE_TRACKER -> attendanceExecutor;
+            default -> httpExecutor;
+        };
     }
 
     private void handleSuccess(Job job) {

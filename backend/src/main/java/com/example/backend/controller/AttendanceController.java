@@ -25,4 +25,9 @@ public class AttendanceController {
         }
         return repository.saveAll(records);
     }
+
+    @GetMapping("/{jobId}")
+    public List<AttendanceRecord> getAttendanceHistory(@PathVariable UUID jobId) {
+        return repository.findByJobId(jobId);
+    }
 }

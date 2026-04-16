@@ -46,9 +46,8 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
-        
-        // Skip rate limiting for public endpoints
-        if (path.startsWith("/gateway/api/auth") || path.startsWith("/gateway/health")) {
+
+        if (path.startsWith("/api/auth") || path.startsWith("/gateway/health")) {
             return chain.filter(exchange);
         }
 
@@ -65,16 +64,17 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     }
 
     private String getClientIdentifier(ServerWebExchange exchange) {
-        // Try to get user ID from header first (set by AuthenticationFilter if it runs first)
+        // Try to get user ID from header first (set by AuthenticationFilter if it runs
+        // first)
         String userId = exchange.getRequest().getHeaders().getFirst("X-User-Id");
         if (userId != null && !userId.isEmpty()) {
             return "user:" + userId;
         }
 
         // Fall back to client IP
-        String clientIp = exchange.getRequest().getRemoteAddress() != null 
-            ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
-            : "unknown";
+        String clientIp = exchange.getRequest().getRemoteAddress() != null
+                ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
+                : "unknown";
         return "ip:" + clientIp;
     }
 
@@ -83,5 +83,3 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
         return -90; // Run after AuthenticationFilter (-100)
     }
 }
-
-

@@ -1,5 +1,6 @@
 package com.example.scheduler.service;
 
+import com.example.scheduler.config.RabbitMQConfig;
 import com.example.scheduler.enums.JobStatus;
 import com.example.scheduler.model.Job;
 import com.example.scheduler.repository.JobRepository;
@@ -32,7 +33,7 @@ public class JobScheduler {
             jobRepository.save(job);
             
             try {
-                rabbitTemplate.convertAndSend("jobQueue", job.getId().toString());
+                rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, job.getId().toString());
             } catch (Exception e) {
                 job.setStatus(JobStatus.PENDING);
                 jobRepository.save(job);

@@ -2,6 +2,7 @@ package com.example.gateway.handler;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import com.example.gateway.security.JwtUtil;
@@ -47,43 +48,37 @@ public class GatewayApiHandler {
     }
 
     public Mono<ServerResponse> proxyBackend(ServerRequest request, WebClient webClient) {
-        String path = request.path().replaceFirst("/api", "");
-        String url = BACKEND_URL + path;
-        
-        String authHeader = request.headers().firstHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ServerResponse.status(401).bodyValue("Unauthorized");
-        }
+        String query = request.uri().getQuery();
+        String url = BACKEND_URL + request.path() + (query != null ? "?" + query : "");
 
-        String token = authHeader.substring(7);
-        String username = jwtUtil.extractUsername(token);
-        
-        if (username == null) {
-            return ServerResponse.status(401).bodyValue("Invalid token");
-        }
-
-        return webClient
+        WebClient.RequestBodySpec bodySpec = webClient
                 .method(request.method())
                 .uri(url)
-                .header("X-User-Id", username)
                 .headers(headers -> {
                     request.headers().asHttpHeaders().forEach((key, values) -> {
                         if (!key.equalsIgnoreCase("Host") && !key.equalsIgnoreCase("Connection")) {
                             headers.addAll(key, values);
                         }
                     });
-                })
-                .body(BodyInserters.fromPublisher(request.bodyToMono(String.class), String.class))
-                .retrieve()
-                .toEntity(String.class)
-                .flatMap(response -> ServerResponse
-                        .status(response.getStatusCode())
-                        .headers(headers -> response.getHeaders().forEach((key, values) -> {
+                });
+
+        WebClient.RequestHeadersSpec<?> headersSpec = bodySpec;
+
+        if (request.method().name().equalsIgnoreCase("POST") || 
+            request.method().name().equalsIgnoreCase("PUT") || 
+            request.method().name().equalsIgnoreCase("PATCH")) {
+            headersSpec = bodySpec.body(BodyInserters.fromPublisher(request.bodyToMono(String.class), String.class));
+        }
+
+        return headersSpec
+                .exchangeToMono((ClientResponse response) -> ServerResponse
+                        .status(response.statusCode())
+                        .headers(headers -> response.headers().asHttpHeaders().forEach((key, values) -> {
                             if (!key.equalsIgnoreCase("Content-Length")) {
                                 headers.addAll(key, values);
                             }
                         }))
-                        .bodyValue(response.getBody() != null ? response.getBody() : ""))
+                        .body(response.bodyToMono(String.class), String.class))
                 .onErrorResume(e -> ServerResponse
                         .status(502)
                         .bodyValue("Bad Gateway: " + e.getMessage()));

@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  
+  cloud:
+    gateway:
+      routes:
+        - id: auth_route
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/auth/**
+        - id: backend_route
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/jobs/**, /api/v1/jobs/**
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pulse
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+jwt:
+  secret: mySecretKeyThatIsAtLeast256BitsLongForJWTAuthenticationPurposesOnlyChangeThis
+  expiration: 3600000
+
+logging:
+  level:
+    root: INFO
+    com.example.gateway: DEBUG

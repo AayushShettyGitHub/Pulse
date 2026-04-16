@@ -3,10 +3,9 @@ package com.example.worker.controller;
 import com.example.worker.service.WorkerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/worker")
@@ -18,5 +17,11 @@ public class WorkerController {
     @GetMapping("/status")
     public ResponseEntity<String> getStatus() {
         return ResponseEntity.ok("Worker is active and listening to queue...");
+    }
+
+    @PostMapping("/run/{id}")
+    public ResponseEntity<String> triggerJob(@PathVariable UUID id) {
+        workerService.processJobById(id);
+        return ResponseEntity.ok("Job execution triggered for ID: " + id);
     }
 }
