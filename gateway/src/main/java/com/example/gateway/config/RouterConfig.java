@@ -7,7 +7,6 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import com.example.gateway.handler.GatewayApiHandler;
-import org.springframework.context.annotation.Configuration;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 
@@ -19,7 +18,7 @@ public class RouterConfig {
         return RouterFunctions
                 .route(POST("/gateway/api/auth/login"), apiHandler::login)
                 .andRoute(POST("/gateway/api/auth/logout"), apiHandler::logout)
-                .andRoute(GET("/gateway/health"), apiHandler::health)
-                .andRoute(path("/api/**"), request -> apiHandler.proxyBackend(request, webClient));
+                .andRoute(GET("/gateway/health"), apiHandler::health);
+
     }
 }

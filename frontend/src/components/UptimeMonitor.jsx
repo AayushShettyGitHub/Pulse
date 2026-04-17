@@ -67,8 +67,9 @@ export default function UptimeMonitor() {
 
   const getUptime = (id) => {
     const hist = histories[id] || [];
-    if (!hist.length) return null;
-    return ((hist.filter(h => h.status === "SUCCESS").length / hist.length) * 100).toFixed(1);
+    if (!hist.length) return "100.0";
+    const successCount = hist.filter(h => h.status === "SUCCESS").length;
+    return ((successCount / hist.length) * 100).toFixed(1);
   };
 
   const getChartData = (id) => {

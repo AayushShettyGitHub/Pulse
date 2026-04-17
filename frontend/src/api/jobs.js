@@ -27,7 +27,11 @@ export async function getAttendanceStats(jobId) {
 
 export async function getJobsByType(type) {
   const all = await getJobs();
-  return Array.isArray(all) ? all.filter(j => (j.jobType || "HTTP") === type) : [];
+  const jobs = Array.isArray(all) ? all : (all?.data || []);
+  return jobs.filter(j => {
+    const jType = j.jobType || j.job_type || "HTTP";
+    return jType.toUpperCase() === type.toUpperCase();
+  });
 }
 
 export async function deleteJob(id) {

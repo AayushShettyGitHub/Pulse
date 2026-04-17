@@ -7,6 +7,8 @@ spring:
   
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_FIRST
       routes:
         - id: auth_route
           uri: http://localhost:8082
@@ -15,7 +17,7 @@ spring:
         - id: backend_route
           uri: http://localhost:8082
           predicates:
-            - Path=/api/jobs/**, /api/v1/jobs/**
+            - Path=/api/**
 
   datasource:
     url: jdbc:postgresql://localhost:5432/pulse

@@ -3,11 +3,14 @@ package com.example.backend.controller;
 import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.JwtUtil;
+import com.example.backend.dto.AuthResponse;
+import com.example.backend.dto.LoginRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,20 +38,21 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
+    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+        String username = request.getUsername();
+        String password = request.getPassword();
 
         return userRepository.findByUsername(username)
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
                 .map(user -> {
                     String token = jwtUtil.generateToken(user.getUsername());
-                    return ResponseEntity.ok(Map.of(
-                        "token", token,
-                        "username", user.getUsername()
-                    ));
+                    String json = String.format("{\"token\":\"%s\",\"username\":\"%s\"}", token, user.getUsername());
+                    return ResponseEntity.ok()
+                            .header("Content-Type", "application/json")
+                            .header("X-Debug-Backend", "AuthController")
+                            .body(json);
                 })
-                .orElse(ResponseEntity.status(401).build());
+                .orElse(ResponseEntity.status(401).body("Invalid credentials"));
     }
 
     @GetMapping("/validate")

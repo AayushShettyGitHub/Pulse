@@ -55,26 +55,41 @@ public class JobService {
 
     public List<JobExecution> getJobHistory(UUID jobId, String userId) {
         Job job = jobRepository.findById(jobId).orElseThrow();
-        if (!job.getCreatedBy().equals(userId)) {
+        if (job.getCreatedBy() != null && userId != null && !job.getCreatedBy().equals(userId)) {
             throw new RuntimeException("Unauthorized access");
         }
         return executionRepository.findByJobIdOrderByExecutedAtDesc(jobId);
     }
     
     public List<JobResponse> getAllJobs(String userId) {
-        return jobRepository.findAll().stream()
+        List<Job> jobs;
+        if (userId != null && !userId.isEmpty()) {
+            final String lowerUserId = userId.toLowerCase();
+            jobs = jobRepository.findAll().stream()
+                    .filter(j -> j.getCreatedBy() != null && j.getCreatedBy().toLowerCase().equals(lowerUserId))
+                    .collect(java.util.stream.Collectors.toList());
+        } else {
+            jobs = jobRepository.findAll();
+        }
+        return jobs.stream()
                 .map(job -> mapToResponse(job, userId))
                 .collect(java.util.stream.Collectors.toList());
     }
 
     public void deleteJob(UUID id, String userId) {
         Job job = jobRepository.findById(id).orElseThrow();
+        if (job.getCreatedBy() != null && userId != null && !job.getCreatedBy().equals(userId)) {
+            throw new RuntimeException("Unauthorized access");
+        }
         jobRepository.delete(job);
         executionRepository.deleteByJobId(id);
     }
 
     public JobResponse pauseJob(UUID id, String userId) {
         Job job = jobRepository.findById(id).orElseThrow();
+        if (job.getCreatedBy() != null && userId != null && !job.getCreatedBy().equals(userId)) {
+            throw new RuntimeException("Unauthorized access");
+        }
         job.setStatus(JobStatus.PAUSED);
         job.setUpdatedAt(LocalDateTime.now());
         return mapToResponse(jobRepository.save(job), userId);
@@ -82,6 +97,9 @@ public class JobService {
 
     public JobResponse resumeJob(UUID id, String userId) {
         Job job = jobRepository.findById(id).orElseThrow();
+        if (job.getCreatedBy() != null && userId != null && !job.getCreatedBy().equals(userId)) {
+            throw new RuntimeException("Unauthorized access");
+        }
         job.setStatus(JobStatus.PENDING);
         job.setUpdatedAt(LocalDateTime.now());
         return mapToResponse(jobRepository.save(job), userId);

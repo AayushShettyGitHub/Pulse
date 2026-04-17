@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface JobRepository extends JpaRepository<Job, UUID> {
     List<Job> findByStatus(JobStatus status);
+    List<Job> findByCreatedBy(String createdBy);
 }

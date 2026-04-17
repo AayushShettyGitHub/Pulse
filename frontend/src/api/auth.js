@@ -3,9 +3,22 @@ import api from "./axiosInstance";
 export async function login(username, password) {
   try {
     const res = await api.post("/auth/login", { username, password });
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("username", res.data.username);
-    return res.data;
+    let data = res.data;
+    console.log("Login Response type:", typeof data);
+    console.log("Login Response data:", JSON.stringify(data));
+    
+    if (typeof data === "string" && data.startsWith("{")) {
+       try { data = JSON.parse(data); } catch {}
+    }
+    
+    const token = data.token || data.accessToken;
+    if (token) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", data.username || username);
+    } else {
+      console.error("Login successful but no token received. Data:", data);
+    }
+    return data;
   } catch (err) {
     throw new Error(err.response?.data || "Login failed");
   }
