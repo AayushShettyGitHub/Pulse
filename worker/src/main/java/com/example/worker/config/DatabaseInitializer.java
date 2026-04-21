@@ -17,28 +17,58 @@ public class DatabaseInitializer {
     public void init() {
         log.info("Initializing database schema if needed...");
         try {
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS name VARCHAR(255)");
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS recurring BOOLEAN DEFAULT FALSE");
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS interval_minutes BIGINT");
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS ends_at TIMESTAMP");
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS max_runs INTEGER");
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS runs_count INTEGER DEFAULT 0");
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS next_run TIMESTAMP");
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS consecutive_failures INTEGER DEFAULT 0");
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS max_consecutive_failures INTEGER DEFAULT 5");
-            jdbcTemplate.execute("ALTER TABLE jobs ADD COLUMN IF NOT EXISTS job_type VARCHAR(50) DEFAULT 'HTTP'");
+            // Create jobs table if it doesn't exist
+            String createJobsTable = "CREATE TABLE IF NOT EXISTS jobs (" +
+                    "id UUID PRIMARY KEY, " +
+                    "name VARCHAR(255) NOT NULL, " +
+                    "job_type VARCHAR(50) DEFAULT 'HTTP', " +
+                    "url VARCHAR(2048) NOT NULL, " +
+                    "method VARCHAR(10) NOT NULL, " +
+                    "payload TEXT, " +
+                    "status VARCHAR(50), " +
+                    "result TEXT, " +
+                    "timetable_json TEXT, " +
+                    "retries INTEGER DEFAULT 0, " +
+                    "max_retries INTEGER DEFAULT 3, " +
+                    "retry_delay INTEGER DEFAULT 30, " +
+                    "next_run TIMESTAMP, " +
+                    "created_at TIMESTAMP, " +
+                    "updated_at TIMESTAMP, " +
+                    "created_by VARCHAR(255), " +
+                    "recurring BOOLEAN DEFAULT FALSE, " +
+                    "interval_minutes BIGINT, " +
+                    "ends_at TIMESTAMP, " +
+                    "max_runs INTEGER, " +
+                    "runs_count INTEGER DEFAULT 0, " +
+                    "consecutive_failures INTEGER DEFAULT 0, " +
+                    "max_consecutive_failures INTEGER DEFAULT 5)";
+            jdbcTemplate.execute(createJobsTable);
 
-            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS job_executions (" +
+            // Create job_executions table if it doesn't exist
+            String createJobExecutionsTable = "CREATE TABLE IF NOT EXISTS job_executions (" +
                     "id UUID PRIMARY KEY, " +
                     "job_id UUID NOT NULL, " +
+                    "job_type VARCHAR(50), " +
                     "status VARCHAR(50), " +
                     "result TEXT, " +
                     "duration_ms BIGINT, " +
                     "response_time_ms BIGINT, " +
                     "status_code INTEGER, " +
-                    "executed_at TIMESTAMP)");
-            jdbcTemplate.execute("ALTER TABLE job_executions ADD COLUMN IF NOT EXISTS response_time_ms BIGINT");
-            jdbcTemplate.execute("ALTER TABLE job_executions ADD COLUMN IF NOT EXISTS status_code INTEGER");
+                    "executed_at TIMESTAMP)";
+            jdbcTemplate.execute(createJobExecutionsTable);
+
+            // Create attendance_records table if it doesn't exist
+            String createAttendanceTable = "CREATE TABLE IF NOT EXISTS attendance_record (" +
+                    "id BIGINT PRIMARY KEY AUTO_INCREMENT, " +
+                    "job_id UUID, " +
+                    "subject VARCHAR(255), " +
+                    "date DATE, " +
+                    "attended BOOLEAN)";
+            try {
+                jdbcTemplate.execute(createAttendanceTable);
+            } catch (Exception e) {
+                log.debug("Attendance table creation skipped (may use different schema): {}", e.getMessage());
+            }
             
             log.info("Database schema initialized successfully.");
         } catch (Exception e) {

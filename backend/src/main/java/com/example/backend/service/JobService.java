@@ -11,39 +11,43 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import com.example.backend.repository.JobExecutionRepository;
 
 @Service
 public class JobService {
     private final JobRepository jobRepository;
-    private final com.example.backend.repository.JobExecutionRepository executionRepository;
+    private final JobExecutionRepository executionRepository;
     
-    public JobService(JobRepository jobRepository, com.example.backend.repository.JobExecutionRepository executionRepository) {
+    public JobService(JobRepository jobRepository,JobExecutionRepository executionRepository) {
         this.jobRepository = jobRepository;
         this.executionRepository = executionRepository;
     }
     
     public JobResponse createJob(CreateJobRequest request, String userId) {
-        Job job = new Job();
-        job.setName(request.getName());
-        job.setJobType(JobType.valueOf(request.getJobType()));
-        job.setUrl(request.getUrl());
-        job.setMethod(request.getMethod().toUpperCase());
-        job.setPayload(request.getPayload());
-        job.setStatus(JobStatus.PENDING);
-        job.setRetries(0);
-        job.setMaxRetries(request.getMaxRetries());
-        job.setNextRun(request.getStartTime() != null ? request.getStartTime() : LocalDateTime.now());
-        job.setCreatedAt(LocalDateTime.now());
-        job.setUpdatedAt(LocalDateTime.now());
-        job.setCreatedBy(userId);
-        job.setRecurring(request.isRecurring());
-        job.setIntervalMinutes(request.getIntervalMinutes());
-        job.setEndsAt(request.getEndsAt());
-        job.setMaxRuns(request.getMaxRuns());
-        job.setMaxConsecutiveFailures(request.getMaxConsecutiveFailures());
-        job.setTimetableJson(request.getTimetableJson());
-        job.setRunsCount(0);
-        job.setConsecutiveFailures(0);
+        LocalDateTime now = LocalDateTime.now();
+        Job job = Job.builder()
+                .name(request.getName())
+                .jobType(JobType.valueOf(request.getJobType()))
+                .url(request.getUrl())
+                .method(request.getMethod().toUpperCase())
+                .payload(request.getPayload())
+                .status(JobStatus.PENDING)
+                .retries(0)
+                .maxRetries(request.getMaxRetries())
+                .nextRun(request.getStartTime() != null ? request.getStartTime() : now)
+                .createdAt(now)
+                .updatedAt(now)
+                .createdBy(userId)
+                .recurring(request.isRecurring())
+                .intervalMinutes(request.getIntervalMinutes())
+                .endsAt(request.getEndsAt())
+                .maxRuns(request.getMaxRuns())
+                .maxConsecutiveFailures(request.getMaxConsecutiveFailures())
+                .timetableJson(request.getTimetableJson())
+                .runsCount(0)
+                .consecutiveFailures(0)
+                .build();
+        
         Job saved = jobRepository.save(job);
         return mapToResponse(saved, userId);
     }
@@ -106,25 +110,25 @@ public class JobService {
     }
     
     private JobResponse mapToResponse(Job job, String userId) {
-        JobResponse res = new JobResponse();
-        res.setId(job.getId());
-        res.setName(job.getName());
-        res.setJobType(job.getJobType() != null ? job.getJobType().name() : "HTTP");
-        res.setStatus(job.getStatus());
-        res.setCreatedAt(job.getCreatedAt());
-        res.setCreatedBy(job.getCreatedBy());
-        res.setResult(job.getResult());
-        res.setRecurring(job.isRecurring());
-        res.setIntervalMinutes(job.getIntervalMinutes());
-        res.setEndsAt(job.getEndsAt());
-        res.setMaxRuns(job.getMaxRuns());
-        res.setRunsCount(job.getRunsCount());
-        res.setNextRun(job.getNextRun());
-        res.setConsecutiveFailures(job.getConsecutiveFailures());
-        res.setMaxConsecutiveFailures(job.getMaxConsecutiveFailures());
-        res.setUrl(job.getUrl());
-        res.setMethod(job.getMethod());
-        res.setTimetableJson(job.getTimetableJson());
-        return res;
+        return JobResponse.builder()
+                .id(job.getId())
+                .name(job.getName())
+                .jobType(job.getJobType() != null ? job.getJobType().name() : "HTTP")
+                .status(job.getStatus())
+                .createdAt(job.getCreatedAt())
+                .createdBy(job.getCreatedBy())
+                .result(job.getResult())
+                .recurring(job.isRecurring())
+                .intervalMinutes(job.getIntervalMinutes())
+                .endsAt(job.getEndsAt())
+                .maxRuns(job.getMaxRuns())
+                .runsCount(job.getRunsCount())
+                .nextRun(job.getNextRun())
+                .consecutiveFailures(job.getConsecutiveFailures())
+                .maxConsecutiveFailures(job.getMaxConsecutiveFailures())
+                .url(job.getUrl())
+                .method(job.getMethod())
+                .timetableJson(job.getTimetableJson())
+                .build();
     }
 }

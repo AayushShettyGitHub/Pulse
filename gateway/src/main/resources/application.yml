@@ -1,38 +1,40 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
+
+backend:
+  url: ${BACKEND_URL:http://localhost:8082}
 
 spring:
   application:
     name: gateway
   
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   cloud:
     gateway:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin Access-Control-Allow-Methods Access-Control-Allow-Headers, RETAIN_FIRST
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 10
+            redis-rate-limiter.burstCapacity: 20
+            key-resolver: "#{@userKeyResolver}"
       routes:
         - id: auth_route
-          uri: http://localhost:8082
+          uri: ${backend.url}
           predicates:
             - Path=/api/auth/**
         - id: backend_route
-          uri: http://localhost:8082
+          uri: ${backend.url}
           predicates:
             - Path=/api/**
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/pulse
-    username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-
 jwt:
-  secret: mySecretKeyThatIsAtLeast256BitsLongForJWTAuthenticationPurposesOnlyChangeThis
-  expiration: 3600000
+  secret: ${JWT_SECRET:mySecretKeyThatIsAtLeast256BitsLongForJWTAuthenticationPurposesOnlyChangeThis}
+  expiration: ${JWT_EXPIRATION:3600000}
 
 logging:
   level:

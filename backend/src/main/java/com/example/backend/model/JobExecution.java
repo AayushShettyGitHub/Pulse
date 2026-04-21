@@ -1,6 +1,7 @@
 package com.example.backend.model;
 
 import com.example.backend.enums.JobStatus;
+import com.example.backend.enums.JobType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,6 +23,10 @@ public class JobExecution {
 
     @Column(nullable = false)
     private UUID jobId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_type")
+    private JobType jobType;
 
     @Enumerated(EnumType.STRING)
     private JobStatus status;
