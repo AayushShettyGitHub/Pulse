@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   Activity, 
   CalendarCheck2, 
+  Database,
   LogOut,
   Zap
 } from "lucide-react";
@@ -15,6 +16,7 @@ export default function Sidebar() {
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
     { icon: Activity, label: "Uptime", path: "/uptime" },
     { icon: CalendarCheck2, label: "Attendance", path: "/attendance-stats" },
+    { icon: Database, label: "Knowledge Base", path: "/knowledge" },
   ];
 
   const handleLogout = () => {

@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Attendance from "./pages/Attendance";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import UptimeMonitor from "./components/UptimeMonitor";
 import AttendanceTracker from "./components/AttendanceTracker";
 
@@ -50,6 +51,12 @@ function App() {
               </div>
               <AttendanceTracker />
             </div>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/knowledge" element={
+          <ProtectedRoute>
+            <KnowledgeBase />
           </ProtectedRoute>
         } />
 

@@ -3,5 +3,6 @@ package com.example.worker.enums;
 public enum JobType {
     HTTP,
     HEALTH_CHECK,
-    ATTENDANCE_TRACKER
+    ATTENDANCE_TRACKER,
+    RAG_INGESTION
 }

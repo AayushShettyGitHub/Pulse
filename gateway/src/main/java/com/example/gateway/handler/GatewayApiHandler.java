@@ -2,7 +2,6 @@ package com.example.gateway.handler;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -12,11 +11,9 @@ import java.util.Map;
 
 @Component
 public class GatewayApiHandler {
-    private final WebClient webClient;
     private final String backendUrl;
 
-    public GatewayApiHandler(WebClient webClient, @Value("${backend.url}") String backendUrl) {
-        this.webClient = webClient;
+    public GatewayApiHandler(@Value("${backend.url}") String backendUrl) {
         this.backendUrl = backendUrl;
     }
 

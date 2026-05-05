@@ -24,6 +24,7 @@ public class JobListener {
             workerService.processJobById(jobId);
         } catch (Exception e) {
             log.error("Error processing job message: {}", e.getMessage());
+            throw new org.springframework.amqp.AmqpRejectAndDontRequeueException(e);
         }
     }
 }

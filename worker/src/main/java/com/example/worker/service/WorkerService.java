@@ -26,6 +26,7 @@ public class WorkerService {
     private final HttpExecutor httpExecutor;
     private final HealthCheckExecutor healthCheckExecutor;
     private final AttendanceExecutor attendanceExecutor;
+    private final RagIngestionExecutor ragIngestionExecutor;
 
     @Value("${resend.admin.email}")
     private String adminEmail;
@@ -66,10 +67,12 @@ public class WorkerService {
     }
 
     private JobExecutor getExecutor(JobType jobType) {
-        if (jobType == null) return httpExecutor;
+        if (jobType == null)
+            return httpExecutor;
         return switch (jobType) {
             case HEALTH_CHECK -> healthCheckExecutor;
             case ATTENDANCE_TRACKER -> attendanceExecutor;
+            case RAG_INGESTION -> ragIngestionExecutor;
             default -> httpExecutor;
         };
     }
@@ -89,15 +92,15 @@ public class WorkerService {
             job.setStatus(JobStatus.FAILED);
             job.setConsecutiveFailures(job.getConsecutiveFailures() + 1);
             job.setRetries(0);
-            
+
             if (job.getJobType() == JobType.HEALTH_CHECK && job.getConsecutiveFailures() == 1) {
-                emailService.sendEmail(adminEmail, 
-                    "PULSE ALERT: " + job.getName() + " is OFFLINE",
-                    "<h3>Uptime Bot Alert</h3>" +
-                    "<p>Your service <b>" + job.getName() + "</b> has failed all recovery attempts.</p>" +
-                    "<p><b>URL:</b> " + job.getUrl() + "</p>" +
-                    "<p><b>Error:</b> " + job.getResult() + "</p>" +
-                    "<p><b>Timestamp:</b> " + LocalDateTime.now() + "</p>");
+                emailService.sendEmail(adminEmail,
+                        "PULSE ALERT: " + job.getName() + " is OFFLINE",
+                        "<h3>Uptime Bot Alert</h3>" +
+                                "<p>Your service <b>" + job.getName() + "</b> has failed all recovery attempts.</p>" +
+                                "<p><b>URL:</b> " + job.getUrl() + "</p>" +
+                                "<p><b>Error:</b> " + job.getResult() + "</p>" +
+                                "<p><b>Timestamp:</b> " + LocalDateTime.now() + "</p>");
             }
         }
     }
@@ -122,9 +125,13 @@ public class WorkerService {
     }
 
     private boolean shouldStop(Job job) {
-        if (job.getMaxRuns() != null && job.getRunsCount() >= job.getMaxRuns()) return true;
-        if (job.getMaxConsecutiveFailures() != null && job.getConsecutiveFailures() >= job.getMaxConsecutiveFailures()) return true;
-        if (job.getEndsAt() != null && LocalDateTime.now().plusMinutes(job.getIntervalMinutes()).isAfter(job.getEndsAt())) return true;
+        if (job.getMaxRuns() != null && job.getRunsCount() >= job.getMaxRuns())
+            return true;
+        if (job.getMaxConsecutiveFailures() != null && job.getConsecutiveFailures() >= job.getMaxConsecutiveFailures())
+            return true;
+        if (job.getEndsAt() != null
+                && LocalDateTime.now().plusMinutes(job.getIntervalMinutes()).isAfter(job.getEndsAt()))
+            return true;
         return false;
     }
 }

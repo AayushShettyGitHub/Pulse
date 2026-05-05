@@ -14,6 +14,8 @@ public class RabbitMQConfig {
     public static final String EXCHANGE_NAME = "pulseExchange";
     public static final String ROUTING_KEY = "job.routing.key";
     public static final String DLQ_NAME = "jobQueue.dlq";
+    public static final String DOCUMENT_QUEUE_NAME = "documentQueue";
+    public static final String DOCUMENT_ROUTING_KEY = "document.routing.key";
 
     @Bean
     public Queue jobQueue() {
@@ -37,5 +39,15 @@ public class RabbitMQConfig {
     @Bean
     public Binding jobBinding(Queue jobQueue, DirectExchange pulseExchange) {
         return BindingBuilder.bind(jobQueue).to(pulseExchange).with(ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue documentQueue() {
+        return new Queue(DOCUMENT_QUEUE_NAME, true);
+    }
+
+    @Bean
+    public Binding documentBinding(Queue documentQueue, DirectExchange pulseExchange) {
+        return BindingBuilder.bind(documentQueue).to(pulseExchange).with(DOCUMENT_ROUTING_KEY);
     }
 }
