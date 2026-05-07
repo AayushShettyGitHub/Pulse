@@ -3,14 +3,12 @@ package com.example.backend.controller;
 import com.example.backend.model.User;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.security.JwtUtil;
-import com.example.backend.dto.AuthResponse;
 import com.example.backend.dto.LoginRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")

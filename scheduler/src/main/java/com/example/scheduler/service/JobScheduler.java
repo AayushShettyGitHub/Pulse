@@ -2,6 +2,7 @@ package com.example.scheduler.service;
 
 import com.example.scheduler.config.RabbitMQConfig;
 import com.example.scheduler.enums.JobStatus;
+import com.example.scheduler.enums.JobType;
 import com.example.scheduler.model.Job;
 import com.example.scheduler.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,9 @@ public class JobScheduler {
         );
 
         for (Job job : jobs) {
+            if (job.getJobType() == JobType.WORKSPACE) {
+                continue;
+            }
             job.setStatus(JobStatus.QUEUED);
             jobRepository.save(job);
             

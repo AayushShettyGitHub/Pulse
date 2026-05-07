@@ -49,22 +49,22 @@
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j</artifactId>
-			<version>0.31.0</version>
+			<version>0.36.2</version>
 		</dependency>
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-open-ai</artifactId>
-			<version>0.31.0</version>
+			<version>0.36.2</version>
 		</dependency>
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-pinecone</artifactId>
-			<version>0.31.0</version>
+			<version>0.36.2</version>
 		</dependency>
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-document-parser-apache-tika</artifactId>
-			<version>0.31.0</version>
+			<version>0.36.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.tika</groupId>

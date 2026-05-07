@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Upload, 
@@ -13,8 +14,9 @@ import {
   X,
   FileUp
 } from "lucide-react";
-import { getJobs } from "../api/jobs";
+import { getJobs, createJob } from "../api/jobs";
 import { uploadDocument, getKnowledgeByJob, askQuestion } from "../api/knowledge";
+import WorkspaceForm from "../components/WorkspaceForm";
 
 export default function KnowledgeBase() {
   const [jobs, setJobs] = useState([]);
@@ -25,6 +27,7 @@ export default function KnowledgeBase() {
   const [query, setQuery] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
 
   useEffect(() => {
     fetchJobs();
@@ -41,11 +44,26 @@ export default function KnowledgeBase() {
   const fetchJobs = async () => {
     try {
       const data = await getJobs();
-      // Filter for RAG_INGESTION or just show all for now
-      setJobs(data);
+      // Only show WORKSPACE type jobs for Knowledge Base
+      const jobsArray = Array.isArray(data) ? data : (data?.data || []);
+      const filtered = jobsArray.filter(job => {
+        const type = job.jobType || job.job_type;
+        return type === 'WORKSPACE';
+      });
+      setJobs(filtered);
     } catch (err) {
       console.error("Failed to fetch jobs", err);
     }
+  };
+
+  const handleCreateWorkspace = async () => {
+    setShowCreateWorkspace(true);
+  };
+
+  const onWorkspaceCreated = (newWorkspace) => {
+    setJobs(prev => [...prev, newWorkspace]);
+    setSelectedJobId(newWorkspace.id);
+    setShowCreateWorkspace(false);
   };
 
   const fetchKnowledge = async () => {
@@ -97,26 +115,53 @@ export default function KnowledgeBase() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-white">AI Knowledge Base</h1>
-        <p className="text-white/50 text-sm mt-1">Upload documents to build a searchable RAG knowledge base.</p>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--text-main)]">AI Knowledge Base</h1>
+          <p className="text-[var(--text-muted)] text-sm mt-1">Upload documents to build a searchable RAG knowledge base.</p>
+        </div>
+        <button 
+          onClick={() => setShowCreateWorkspace(true)}
+          className="bg-sky-500 hover:bg-sky-400 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-sky-500/20"
+        >
+          <Database size={16} />
+          New Workspace
+        </button>
       </header>
+
+      <AnimatePresence>
+        {showCreateWorkspace && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-8"
+          >
+            <div className="max-w-md mx-auto">
+              <WorkspaceForm 
+                onWorkspaceCreated={onWorkspaceCreated} 
+                onCancel={() => setShowCreateWorkspace(false)} 
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Management */}
         <div className="lg:col-span-1 space-y-6">
           {/* Job Selection */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-xl">
-            <h2 className="text-sm font-bold text-white/80 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <Database size={16} className="text-sky-400" />
+          <div className="card p-5">
+            <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Database size={16} className="text-sky-500" />
               Select Workspace
             </h2>
             <select 
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all appearance-none"
+              className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-xl px-4 py-3 text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all appearance-none"
             >
-              <option value="">Select a Job/Project</option>
+              <option value="">{jobs.length === 0 ? "No Workspaces Found" : "Choose a Workspace"}</option>
               {jobs.map(job => (
                 <option key={job.id} value={job.id}>{job.name}</option>
               ))}
@@ -151,10 +196,10 @@ export default function KnowledgeBase() {
           </div>
 
           {/* Document List */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col h-[400px]">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-xs font-bold text-white/60 uppercase">Indexed Documents</h2>
-              <span className="bg-white/10 px-2 py-0.5 rounded-full text-[10px] text-white/80">{knowledge.length}</span>
+          <div className="card overflow-hidden flex flex-col h-[400px]">
+            <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-surface)]/30">
+              <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase">Indexed Documents</h2>
+              <span className="bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full text-[10px] font-bold">{knowledge.length}</span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {isLoading ? (
@@ -164,12 +209,12 @@ export default function KnowledgeBase() {
                 </div>
               ) : knowledge.length > 0 ? (
                 knowledge.map(file => (
-                  <div key={file.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group">
-                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/60">
+                  <div key={file.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--bg-surface)] transition-colors group border border-transparent hover:border-[var(--border-color)]">
+                    <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
                       <FileText size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] text-white/90 truncate font-medium">{file.fileName}</p>
+                      <p className="text-[13px] text-[var(--text-main)] truncate font-medium">{file.fileName}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className={`w-1.5 h-1.5 rounded-full ${
                           file.status === 'INDEXED' ? 'bg-green-500' : 
@@ -192,36 +237,36 @@ export default function KnowledgeBase() {
 
         {/* Right Column: Chat Interface */}
         <div className="lg:col-span-2">
-          <div className="bg-white/5 border border-white/10 rounded-2xl flex flex-col h-[650px] overflow-hidden backdrop-blur-xl relative">
+          <div className="card flex flex-col h-[650px] overflow-hidden relative shadow-sm">
             {!selectedJobId && (
-              <div className="absolute inset-0 z-10 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-12 text-center">
+              <div className="absolute inset-0 z-10 bg-[var(--bg-app)]/80 backdrop-blur-[2px] flex items-center justify-center p-12 text-center">
                 <div className="max-w-xs">
-                  <MessageSquare size={48} className="mx-auto mb-4 text-white/20" />
-                  <h3 className="text-lg font-bold text-white mb-2">Select a Workspace</h3>
-                  <p className="text-sm text-white/40">Choose a job from the list on the left to start chatting with its knowledge base.</p>
+                  <MessageSquare size={48} className="mx-auto mb-4 text-[var(--text-muted)] opacity-20" />
+                  <h3 className="text-lg font-bold text-[var(--text-main)] mb-2">Select a Workspace</h3>
+                  <p className="text-sm text-[var(--text-muted)]">Choose a job from the list on the left to start chatting with its knowledge base.</p>
                 </div>
               </div>
             )}
 
             {/* Chat Header */}
-            <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
+            <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center gap-3 bg-[var(--bg-surface)]/30">
               <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center text-sky-400">
                 <MessageSquare size={20} />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-white">AI Assistant</h2>
+                <h2 className="text-sm font-bold text-[var(--text-main)]">AI Assistant</h2>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-                  <span className="text-[10px] text-green-500/80 font-bold uppercase tracking-wider">Ready to answer</span>
+                  <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Ready to answer</span>
                 </div>
               </div>
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[var(--bg-app)]">
               {chatHistory.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center opacity-30 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full border border-white/20 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full border border-[var(--border-color)] flex items-center justify-center">
                     <Search size={24} />
                   </div>
                   <div>
@@ -237,12 +282,14 @@ export default function KnowledgeBase() {
                     animate={{ opacity: 1, y: 0 }}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[14px] leading-relaxed ${
+                  <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[14px] leading-relaxed ${
                       msg.role === 'user' 
                         ? 'bg-sky-600 text-white shadow-lg shadow-sky-900/20 rounded-tr-none' 
-                        : 'bg-white/10 text-white/90 border border-white/5 rounded-tl-none'
+                        : 'bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-color)] rounded-tl-none'
                     }`}>
-                      {msg.content}
+                      <div className="markdown-content">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
                     </div>
                   </motion.div>
                 ))

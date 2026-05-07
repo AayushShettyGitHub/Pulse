@@ -50,4 +50,9 @@ public class RabbitMQConfig {
     public Binding documentBinding(Queue documentQueue, DirectExchange pulseExchange) {
         return BindingBuilder.bind(documentQueue).to(pulseExchange).with(DOCUMENT_ROUTING_KEY);
     }
+
+    @Bean
+    public org.springframework.amqp.support.converter.MessageConverter messageConverter() {
+        return new org.springframework.amqp.support.converter.Jackson2JsonMessageConverter();
+    }
 }

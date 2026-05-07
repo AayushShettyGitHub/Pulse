@@ -149,3 +149,29 @@ button {
 .badge-warning { background: #fef3c7; color: #92400e; }
 .badge-info { background: #e0f2fe; color: #0369a1; }
 .badge-neutral { background: #f3f4f6; color: #4b5563; }
+
+/* Markdown Styles */
+.markdown-content h1, .markdown-content h2, .markdown-content h3 {
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: inherit;
+}
+.markdown-content h1 { font-size: 1.5rem; }
+.markdown-content h2 { font-size: 1.25rem; }
+.markdown-content h3 { font-size: 1.1rem; }
+.markdown-content p { margin-bottom: 0.75rem; }
+.markdown-content ul, .markdown-content ol {
+  margin-bottom: 0.75rem;
+  padding-left: 1.25rem;
+}
+.markdown-content ul { list-style-type: disc; }
+.markdown-content ol { list-style-type: decimal; }
+.markdown-content li { margin-bottom: 0.25rem; }
+.markdown-content code {
+  background: rgba(0,0,0,0.1);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
+.markdown-content strong { font-weight: 700; }

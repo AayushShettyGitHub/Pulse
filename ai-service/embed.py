@@ -6,8 +6,8 @@ import json
 app = FastAPI()
 
 
-print("Loading BAAI/bge-small-en-v1.5...")
-model = SentenceTransformer('BAAI/bge-small-en-v1.5')
+print("Loading BAAI/bge-large-en-v1.5...")
+model = SentenceTransformer('BAAI/bge-large-en-v1.5')
 
 @app.post("/embed")
 async def embed(request: Request):

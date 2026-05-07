@@ -28,6 +28,7 @@ public class Job {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "job_type")
+    @Builder.Default
     private JobType jobType = JobType.HTTP;
 
     @Column(nullable = false)
@@ -48,12 +49,15 @@ public class Job {
     @Column(columnDefinition = "text")
     private String timetableJson;
 
+    @Builder.Default
     private Integer retries = 0;
 
     @Column(name = "max_retries")
+    @Builder.Default
     private Integer maxRetries = 3;
 
     @Column(name = "retry_delay")
+    @Builder.Default
     private Integer retryDelay = 30;
 
     @Column(name = "next_run")
@@ -80,9 +84,11 @@ public class Job {
     private Integer maxRuns;
 
     @Column(name = "runs_count")
+    @Builder.Default
     private Integer runsCount = 0;
 
     @Column(name = "consecutive_failures")
+    @Builder.Default
     private Integer consecutiveFailures = 0;
 
     @Column(name = "max_consecutive_failures")

@@ -7,6 +7,9 @@ import org.springframework.context.annotation.Configuration;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
+
 @Configuration
 public class RabbitMQConfig {
 
@@ -22,5 +25,10 @@ public class RabbitMQConfig {
         args.put("x-dead-letter-exchange", "");
         args.put("x-dead-letter-routing-key", DLQ_NAME);
         return new Queue(QUEUE_NAME, true, false, false, args);
+    }
+
+    @Bean
+    public MessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter();
     }
 }

@@ -14,7 +14,6 @@ import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pinecone.PineconeEmbeddingStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,13 +44,19 @@ public class DocumentListener {
     @Value("${pinecone.index:}")
     private String pineconeIndex;
 
+    @Value("${pinecone.project-name:}")
+    private String pineconeProjectName;
+
+    @Value("${pinecone.host:}")
+    private String pineconeHost;
+
     @Value("${ai.service.url:http://localhost:8000/embed}")
     private String aiServiceUrl;
 
     @RabbitListener(queues = RabbitMQConfig.DOCUMENT_QUEUE_NAME)
     public void processDocument(ProcessDocumentRequest request) {
         log.info("Processing document: {} for job: {}", request.getFileName(), request.getJobId());
-        
+
         KnowledgeMetadata meta = knowledgeRepository.findById(request.getMetadataId()).orElse(null);
         if (meta == null) {
             log.error("Metadata not found for ID: {}", request.getMetadataId());
@@ -61,10 +66,11 @@ public class DocumentListener {
         try {
             EmbeddingModel embeddingModel = new com.example.worker.ai.LocalEmbeddingModel(aiServiceUrl);
 
-            EmbeddingStore<TextSegment> embeddingStore = PineconeEmbeddingStore.builder()
+            PineconeEmbeddingStore embeddingStore = PineconeEmbeddingStore.builder()
                     .apiKey(pineconeApiKey)
-                    .environment(pineconeEnvironment)
                     .index(pineconeIndex)
+                    .environment(pineconeEnvironment)
+                    .projectId(pineconeProjectName)
                     .build();
 
             DocumentParser parser = new ApacheTikaDocumentParser();
@@ -83,16 +89,16 @@ public class DocumentListener {
                 }
                 document = FileSystemDocumentLoader.loadDocument(path, parser);
             }
-            
+
             document.metadata().put("jobId", request.getJobId().toString());
             document.metadata().put("fileName", request.getFileName());
 
-            DocumentSplitter splitter = DocumentSplitters.recursive(500, 50);
+            DocumentSplitter splitter = DocumentSplitters.recursive(300, 30);
             List<TextSegment> segments = splitter.split(document);
-            
+
             log.info("Generating embeddings for {} segments...", segments.size());
             List<Embedding> embeddings = embeddingModel.embedAll(segments).content();
-            
+
             embeddingStore.addAll(embeddings, segments);
 
             if (!request.getSourceUrl().startsWith("http")) {
@@ -103,7 +109,7 @@ public class DocumentListener {
             meta.setStatus(KnowledgeStatus.INDEXED);
             meta.setLastIndexedAt(LocalDateTime.now());
             knowledgeRepository.save(meta);
-            
+
             log.info("Successfully indexed and purged document: {}", request.getFileName());
 
         } catch (Exception e) {
@@ -113,4 +119,3 @@ public class DocumentListener {
         }
     }
 }
-
