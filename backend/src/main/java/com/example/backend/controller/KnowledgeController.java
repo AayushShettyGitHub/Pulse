@@ -28,4 +28,10 @@ public class KnowledgeController {
     public ResponseEntity<List<KnowledgeMetadata>> getKnowledgeByJob(@PathVariable UUID jobId) {
         return ResponseEntity.ok(knowledgeService.getKnowledgeByJob(jobId));
     }
+
+    @DeleteMapping("/{documentId}")
+    public ResponseEntity<Void> deleteDocument(@PathVariable UUID documentId) {
+        knowledgeService.deleteDocument(documentId);
+        return ResponseEntity.ok().build();
+    }
 }

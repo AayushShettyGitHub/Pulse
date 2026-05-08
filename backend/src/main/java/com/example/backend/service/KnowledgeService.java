@@ -61,4 +61,15 @@ public class KnowledgeService {
     public List<KnowledgeMetadata> getKnowledgeByJob(UUID jobId) {
         return knowledgeRepository.findByJobId(jobId);
     }
+
+    public void deleteDocument(UUID documentId) {
+        knowledgeRepository.deleteById(documentId);
+        log.info("Deleted knowledge document: {}", documentId);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteByJobId(UUID jobId) {
+        knowledgeRepository.deleteByJobId(jobId);
+        log.info("Deleted all knowledge documents for job: {}", jobId);
+    }
 }

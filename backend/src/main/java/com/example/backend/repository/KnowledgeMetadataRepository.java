@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface KnowledgeMetadataRepository extends JpaRepository<KnowledgeMetadata, UUID> {
     List<KnowledgeMetadata> findByJobId(UUID jobId);
     List<KnowledgeMetadata> findByJobIdAndStatus(UUID jobId, com.example.backend.enums.KnowledgeStatus status);
+    void deleteByJobId(UUID jobId);
 }

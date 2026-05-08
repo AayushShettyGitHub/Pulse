@@ -17,10 +17,12 @@ import com.example.backend.repository.JobExecutionRepository;
 public class JobService {
     private final JobRepository jobRepository;
     private final JobExecutionRepository executionRepository;
+    private final KnowledgeService knowledgeService;
     
-    public JobService(JobRepository jobRepository,JobExecutionRepository executionRepository) {
+    public JobService(JobRepository jobRepository, JobExecutionRepository executionRepository, KnowledgeService knowledgeService) {
         this.jobRepository = jobRepository;
         this.executionRepository = executionRepository;
+        this.knowledgeService = knowledgeService;
     }
     
     public JobResponse createJob(CreateJobRequest request, String userId) {
@@ -80,13 +82,15 @@ public class JobService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void deleteJob(UUID id, String userId) {
         Job job = jobRepository.findById(id).orElseThrow();
         if (job.getCreatedBy() != null && userId != null && !job.getCreatedBy().equals(userId)) {
             throw new RuntimeException("Unauthorized access");
         }
-        jobRepository.delete(job);
+        knowledgeService.deleteByJobId(id);
         executionRepository.deleteByJobId(id);
+        jobRepository.delete(job);
     }
 
     public JobResponse pauseJob(UUID id, String userId) {

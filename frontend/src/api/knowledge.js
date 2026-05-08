@@ -18,6 +18,10 @@ export const getKnowledgeByJob = async (jobId) => {
   return response.data;
 };
 
+export const deleteDocument = async (documentId) => {
+  await axiosInstance.delete(`/knowledge/${documentId}`);
+};
+
 export const askQuestion = async (jobId, query) => {
   const response = await axiosInstance.post(`/chat/${jobId}`, query, {
     headers: {

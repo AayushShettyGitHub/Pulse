@@ -69,8 +69,6 @@ public class DocumentListener {
             PineconeEmbeddingStore embeddingStore = PineconeEmbeddingStore.builder()
                     .apiKey(pineconeApiKey)
                     .index(pineconeIndex)
-                    .environment(pineconeEnvironment)
-                    .projectId(pineconeProjectName)
                     .build();
 
             DocumentParser parser = new ApacheTikaDocumentParser();

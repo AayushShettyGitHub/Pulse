@@ -1,12 +1,10 @@
 package com.example.backend.service;
 
 import dev.langchain4j.chain.ConversationalRetrievalChain;
-import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
-import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pinecone.PineconeEmbeddingStore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,63 +16,53 @@ import java.util.UUID;
 @Slf4j
 public class ChatService {
 
-    @Value("${groq.api.key:}")
-    private String groqApiKey;
+        @Value("${groq.api.key:}")
+        private String groqApiKey;
 
-    @Value("${pinecone.api.key:}")
-    private String pineconeApiKey;
+        @Value("${pinecone.api.key:}")
+        private String pineconeApiKey;
 
-    @Value("${pinecone.environment:}")
-    private String pineconeEnvironment;
+        @Value("${pinecone.index:}")
+        private String pineconeIndex;
 
-    @Value("${pinecone.index:}")
-    private String pineconeIndex;
+        @Value("${ai.service.url:http://localhost:8000/embed}")
+        private String aiServiceUrl;
 
-    @Value("${pinecone.project-name:}")
-    private String pineconeProjectName;
+        public String askQuestion(UUID jobId, String query) {
+                try {
+                        PineconeEmbeddingStore embeddingStore = PineconeEmbeddingStore.builder()
+                                        .apiKey(pineconeApiKey)
+                                        .index(pineconeIndex)
+                                        .build();
 
-    @Value("${pinecone.host:}")
-    private String pineconeHost;
+                        EmbeddingModel embeddingModel = new com.example.backend.ai.LocalEmbeddingModel(aiServiceUrl);
 
-    @Value("${ai.service.url:http://localhost:8000/embed}")
-    private String aiServiceUrl;
+                        ContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
+                                        .embeddingStore(embeddingStore)
+                                        .embeddingModel(embeddingModel)
+                                        .maxResults(10)
+                                        .build();
 
-    public String askQuestion(UUID jobId, String query) {
-        try {
-            PineconeEmbeddingStore embeddingStore = PineconeEmbeddingStore.builder()
-                    .apiKey(pineconeApiKey)
-                    .index(pineconeIndex)
-                    .environment(pineconeEnvironment)
-                    .projectId(pineconeProjectName)
-                    .build();
+                        OpenAiChatModel chatModel = OpenAiChatModel.builder()
+                                        .apiKey(groqApiKey)
+                                        .baseUrl("https://api.groq.com/openai/v1")
+                                        .modelName("llama-3.1-8b-instant")
+                                        .build();
 
-            EmbeddingModel embeddingModel = new com.example.backend.ai.LocalEmbeddingModel(aiServiceUrl);
+                        ConversationalRetrievalChain chain = ConversationalRetrievalChain.builder()
+                                        .chatLanguageModel(chatModel)
+                                        .contentRetriever(contentRetriever)
+                                        .build();
 
-            ContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
-                    .embeddingStore(embeddingStore)
-                    .embeddingModel(embeddingModel)
-                    .maxResults(10)
-                    .build();
+                        String instructions = "Instructions: Provide accurate information based ONLY on the provided context.\n"
+                                        +
+                                        "- Do not mix features between different projects.\n" +
+                                        "- Use clean Markdown formatting.\n\nQuery: ";
 
-            OpenAiChatModel chatModel = OpenAiChatModel.builder()
-                    .apiKey(groqApiKey)
-                    .baseUrl("https://api.groq.com/openai/v1")
-                    .modelName("llama-3.1-8b-instant")
-                    .build();
-
-            ConversationalRetrievalChain chain = ConversationalRetrievalChain.builder()
-                    .chatLanguageModel(chatModel)
-                    .contentRetriever(contentRetriever)
-                    .build();
-
-            String instructions = "Instructions: Provide accurate information based ONLY on the provided context.\n" +
-                    "- Do not mix features between different projects.\n" +
-                    "- Use clean Markdown formatting.\n\nQuery: ";
-
-            return chain.execute(instructions + query);
-        } catch (Exception e) {
-            log.error("RAG query failed", e);
-            return "Error: " + e.getMessage();
+                        return chain.execute(instructions + query);
+                } catch (Exception e) {
+                        log.error("RAG query failed", e);
+                        return "Error: " + e.getMessage();
+                }
         }
-    }
 }

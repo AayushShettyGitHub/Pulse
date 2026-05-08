@@ -16,6 +16,7 @@ public class RabbitMQConfig {
     public static final String DLQ_NAME = "jobQueue.dlq";
     public static final String DOCUMENT_QUEUE_NAME = "documentQueue";
     public static final String DOCUMENT_ROUTING_KEY = "document.routing.key";
+    public static final String DOCUMENT_DLQ_NAME = "documentQueue.dlq";
 
     @Bean
     public Queue jobQueue() {
@@ -43,7 +44,15 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue documentQueue() {
-        return new Queue(DOCUMENT_QUEUE_NAME, true);
+        Map<String, Object> args = new HashMap<>();
+        args.put("x-dead-letter-exchange", "");
+        args.put("x-dead-letter-routing-key", DOCUMENT_DLQ_NAME);
+        return new Queue(DOCUMENT_QUEUE_NAME, true, false, false, args);
+    }
+
+    @Bean
+    public Queue documentDeadLetterQueue() {
+        return new Queue(DOCUMENT_DLQ_NAME, true);
     }
 
     @Bean
