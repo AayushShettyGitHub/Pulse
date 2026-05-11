@@ -18,11 +18,16 @@ public class JobService {
     private final JobRepository jobRepository;
     private final JobExecutionRepository executionRepository;
     private final KnowledgeService knowledgeService;
+    private final com.example.backend.repository.ChatMessageRepository chatMessageRepository;
     
-    public JobService(JobRepository jobRepository, JobExecutionRepository executionRepository, KnowledgeService knowledgeService) {
+    public JobService(JobRepository jobRepository, 
+                      JobExecutionRepository executionRepository, 
+                      KnowledgeService knowledgeService,
+                      com.example.backend.repository.ChatMessageRepository chatMessageRepository) {
         this.jobRepository = jobRepository;
         this.executionRepository = executionRepository;
         this.knowledgeService = knowledgeService;
+        this.chatMessageRepository = chatMessageRepository;
     }
     
     public JobResponse createJob(CreateJobRequest request, String userId) {
@@ -90,6 +95,7 @@ public class JobService {
         }
         knowledgeService.deleteByJobId(id);
         executionRepository.deleteByJobId(id);
+        chatMessageRepository.deleteByJobId(id);
         jobRepository.delete(job);
     }
 

@@ -16,6 +16,7 @@ import {
 import { getJobs, deleteJob } from "../api/jobs";
 import { uploadDocument, getKnowledgeByJob, askQuestion, deleteDocument } from "../api/knowledge";
 import WorkspaceForm from "../components/WorkspaceForm";
+import toast from "react-hot-toast";
 
 export default function KnowledgeBase() {
   const [jobs, setJobs] = useState([]);
@@ -83,10 +84,13 @@ export default function KnowledgeBase() {
     if (!file || !selectedJobId) return;
 
     setIsUploading(true);
+    const toastId = toast.loading("Uploading and indexing document...");
     try {
       await uploadDocument(selectedJobId, file);
+      toast.success("Document uploaded successfully", { id: toastId });
       fetchKnowledge();
     } catch (err) {
+      toast.error("Upload failed: " + err.message, { id: toastId });
       console.error("Upload failed", err);
     } finally {
       setIsUploading(false);
@@ -95,25 +99,44 @@ export default function KnowledgeBase() {
 
   const handleDeleteWorkspace = async () => {
     if (!selectedJobId) return;
-    if (!window.confirm("Delete this workspace and all its documents? This cannot be undone.")) return;
-    try {
-      await deleteJob(selectedJobId);
-      setSelectedJobId("");
-      setKnowledge([]);
-      setChatHistory([]);
-      fetchJobs();
-    } catch (err) {
-      console.error("Failed to delete workspace", err);
-    }
+    
+    toast((t) => (
+      <div className="flex flex-col gap-3 p-1">
+        <p className="text-sm font-medium text-gray-900">Delete this workspace and all its documents? This cannot be undone.</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">Cancel</button>
+          <button 
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const loadingToast = toast.loading("Deleting workspace...");
+              try {
+                await deleteJob(selectedJobId);
+                toast.success("Workspace deleted", { id: loadingToast });
+                setSelectedJobId("");
+                setKnowledge([]);
+                setChatHistory([]);
+                fetchJobs();
+              } catch (err) {
+                toast.error("Deletion failed", { id: loadingToast });
+              }
+            }} 
+            className="px-3 py-1.5 text-xs font-semibold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    ), { duration: 6000, position: 'top-center' });
   };
 
   const handleDeleteDocument = async (documentId) => {
-    if (!window.confirm("Remove this document from the workspace?")) return;
+    const loadingToast = toast.loading("Removing document...");
     try {
       await deleteDocument(documentId);
+      toast.success("Document removed", { id: loadingToast });
       fetchKnowledge();
     } catch (err) {
-      console.error("Failed to delete document", err);
+      toast.error("Failed to remove document", { id: loadingToast });
     }
   };
 

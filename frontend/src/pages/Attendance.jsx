@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { getJob, markAttendance } from "../api/jobs";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Zap, UserCheck, Clock, ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function Attendance() {
   const [searchParams] = useSearchParams();
@@ -36,12 +37,14 @@ export default function Attendance() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    const toastId = toast.loading("Recording attendance...");
     try {
       const records = subjects.map(s => ({ subject: s, attended: status[s] }));
       await markAttendance(jobId, records);
+      toast.success("Attendance recorded!", { id: toastId });
       setSubmitted(true);
     } catch (err) {
-      alert("Failed: " + err.message);
+      toast.error("Submission failed: " + err.message, { id: toastId });
     } finally {
       setSubmitting(false);
     }

@@ -6,12 +6,22 @@ import {
   CalendarCheck2, 
   Database,
   LogOut,
-  Zap
+  Zap,
+  Sun,
+  Moon
 } from "lucide-react";
 
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [theme, setTheme] = React.useState(localStorage.getItem("theme") || "light");
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(theme === "light" ? "dark" : "light");
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
     { icon: Activity, label: "Uptime", path: "/uptime" },
@@ -59,7 +69,14 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="px-4 py-4 border-t border-white/[0.06]">
+      <div className="px-4 py-4 border-t border-white/[0.06] space-y-1">
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-[13.5px] font-semibold !text-white/70 hover:!bg-white/5 hover:!text-white transition-all duration-200"
+        >
+          {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+          <span className="flex-1 text-left">{theme === "light" ? "Dark Mode" : "Light Mode"}</span>
+        </button>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-[13.5px] font-semibold !text-white/70 hover:!bg-red-500/10 hover:!text-red-400 transition-all duration-200"

@@ -14,6 +14,24 @@
   --accent-light: #e0f2fe;
   --accent-text: #0284c7;
 
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+[data-theme='dark'] {
+  --bg-app: #0f111a;
+  --bg-surface: #1a1d26;
+  --bg-sidebar: #05060a;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-sidebar: #94a3b8;
+  --text-sidebar-active: #ffffff;
+  --border-color: #1e293b;
+  --accent: #38bdf8;
+  --accent-hover: #0ea5e9;
+  --accent-light: #0c4a6e;
+  --accent-text: #38bdf8;
+}
+
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background-color: var(--bg-app);
   color: var(--text-main);

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getJobsByType, createJob, getJobHistory, deleteJob, pauseJob, resumeJob } from "../api/jobs";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Plus, CheckCircle2, AlertCircle, Play, Pause, Trash2, Clock, Activity, ChevronDown, ChevronUp, X } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function UptimeMonitor() {
   const [monitors, setMonitors] = useState([]);
@@ -38,31 +39,63 @@ export default function UptimeMonitor() {
     return () => window.clearInterval(timer);
   }, [fetchMonitors]);
 
+
+
   const handleAdd = async (e) => {
     e.preventDefault();
+    const toastId = toast.loading("Adding monitor...");
     try {
       await createJob({
         name, url, method: "GET", jobType: "HEALTH_CHECK",
         recurring: true, intervalMinutes: parseInt(interval),
         maxConsecutiveFailures: 100, maxRetries: 0
       });
+      toast.success("Monitor added", { id: toastId });
       setName(""); setUrl(""); setShowAdd(false);
       fetchMonitors();
-    } catch (err) { alert(err.message); }
+    } catch (err) { 
+      toast.error("Failed to add monitor: " + err.message, { id: toastId });
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this monitor?")) return;
-    try { await deleteJob(id); fetchMonitors(); }
-    catch (err) { alert(err.message); }
+    toast((t) => (
+      <div className="flex flex-col gap-3 p-1">
+        <p className="text-sm font-medium text-gray-900">Delete this monitor? This will stop tracking.</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={() => toast.dismiss(t.id)} className="px-3 py-1.5 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">Cancel</button>
+          <button 
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const loadingToast = toast.loading("Deleting monitor...");
+              try {
+                await deleteJob(id);
+                toast.success("Monitor deleted", { id: loadingToast });
+                fetchMonitors();
+              } catch (err) {
+                toast.error("Deletion failed", { id: loadingToast });
+              }
+            }} 
+            className="px-3 py-1.5 text-xs font-semibold bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    ), { duration: 5000, position: 'top-center' });
   };
 
   const handleTogglePause = async (mon) => {
+    const action = mon.status === 'PAUSED' ? "Resuming" : "Pausing";
+    const toastId = toast.loading(`${action} monitor...`);
     try {
       if (mon.status === 'PAUSED') await resumeJob(mon.id);
       else await pauseJob(mon.id);
+      toast.success(`Monitor ${action.toLowerCase()}d`, { id: toastId });
       fetchMonitors();
-    } catch (err) { alert(err.message); }
+    } catch (err) { 
+      toast.error(`Action failed: ${err.message}`, { id: toastId });
+    }
   };
 
   const getUptime = (id) => {
@@ -170,7 +203,23 @@ export default function UptimeMonitor() {
                 <div className="px-4 pb-4 border-t border-[var(--border-color)] bg-[var(--bg-surface)]">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-4">
                     <div className="lg:col-span-2">
-                      <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase mb-2">Response time</p>
+                      <div className="mb-4">
+                        <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase mb-2">Health Grid (Last 50 checks)</p>
+                        <div className="flex flex-wrap gap-1">
+                          {chartData.slice(-50).map((d, i) => (
+                            <div 
+                              key={i} 
+                              title={`${d.time}: ${d.status}`}
+                              className={`w-2.5 h-6 rounded-sm ${d.status === 'SUCCESS' ? 'bg-emerald-500/80' : 'bg-rose-500/80'}`}
+                            ></div>
+                          ))}
+                          {Array.from({ length: Math.max(0, 50 - chartData.length) }).map((_, i) => (
+                            <div key={`empty-${i}`} className="w-2.5 h-6 rounded-sm bg-gray-100"></div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase mb-2">Response time trend (ms)</p>
                       <div className="h-40 w-full bg-white rounded-lg border border-[var(--border-color)] p-2">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={chartData}>
