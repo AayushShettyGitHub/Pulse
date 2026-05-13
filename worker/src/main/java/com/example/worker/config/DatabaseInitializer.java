@@ -59,7 +59,7 @@ public class DatabaseInitializer {
 
             // Create attendance_records table if it doesn't exist
             String createAttendanceTable = "CREATE TABLE IF NOT EXISTS attendance_record (" +
-                    "id BIGINT PRIMARY KEY AUTO_INCREMENT, " +
+                    "id BIGSERIAL PRIMARY KEY, " +
                     "job_id UUID, " +
                     "subject VARCHAR(255), " +
                     "date DATE, " +

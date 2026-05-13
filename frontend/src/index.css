@@ -32,6 +32,7 @@
   --accent-text: #38bdf8;
 }
 
+html {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background-color: var(--bg-app);
   color: var(--text-main);

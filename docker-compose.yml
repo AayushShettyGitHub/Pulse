@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: pulse-postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: pulse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: pulse-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: pulse-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  ai-service:
+    build: ./ai-service
+    container_name: ai-service
+    ports:
+      - "8000:8000"
+    restart: always
+
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "8082:8082"
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/pulse
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - REDIS_HOST=redis
+      - AI_SERVICE_URL=http://ai-service:8000/embed
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    env_file:
+      - .env
+
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8081:8081"
+    environment:
+      - BACKEND_URL=http://backend:8082
+      - REDIS_HOST=redis
+    depends_on:
+      - backend
+    env_file:
+      - .env
+
+  scheduler:
+    build: ./scheduler
+    container_name: scheduler
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/pulse
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    env_file:
+      - .env
+
+  worker:
+    build: ./worker
+    container_name: worker
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/pulse
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - AI_SERVICE_URL=http://ai-service:8000/embed
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    env_file:
+      - .env
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

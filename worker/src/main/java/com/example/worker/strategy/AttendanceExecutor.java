@@ -47,7 +47,7 @@ public class AttendanceExecutor implements JobExecutor {
             "<div style='background:#ffffff;padding:24px 32px;border:1px solid #e5e7eb;border-top:none;'>" +
             "  <p style='color:#374151;font-size:14px;line-height:1.6;margin:0 0 16px;'>Hi there! It's time to log your attendance for today's sessions:</p>" +
             "  <ul style='margin:0 0 20px;padding-left:20px;'>" + subjectList + "</ul>" +
-            "  <a href='http://localhost:5173/attendance?id=" + job.getId() + "' " +
+            "  <a href='http://localhost:3000/attendance?id=" + job.getId() + "' " +
             "     style='display:inline-block;background:#0284c7;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;'>" +
             "     Mark Attendance →</a>" +
             "</div>" +
@@ -66,7 +66,7 @@ public class AttendanceExecutor implements JobExecutor {
             "</div>" +
             "<div style='background:#ffffff;padding:24px 32px;border:1px solid #e5e7eb;border-top:none;'>" +
             "  <p style='color:#374151;font-size:14px;line-height:1.6;margin:0 0 16px;'>Your weekly attendance report is ready for review.</p>" +
-            "  <a href='http://localhost:5173/attendance-stats' " +
+            "  <a href='http://localhost:3000/attendance-stats' " +
             "     style='display:inline-block;background:#16a34a;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;'>" +
             "     View Report →</a>" +
             "</div>" +
