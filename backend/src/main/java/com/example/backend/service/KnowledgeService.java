@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -55,6 +56,43 @@ public class KnowledgeService {
         } catch (Exception e) {
             log.error("Failed to upload document to Cloudinary", e);
             throw new RuntimeException("Upload failed", e);
+        }
+    }
+
+    public KnowledgeMetadata ingestTextDocument(UUID jobId, String fileName, String sourceUrl, String textContent) {
+        try {
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(
+                    textContent.getBytes(StandardCharsets.UTF_8),
+                    ObjectUtils.asMap("resource_type", "raw", "public_id", fileName.replaceAll("[^a-zA-Z0-9-_]+", "_"))
+            );
+
+            String url = (String) uploadResult.get("secure_url");
+
+            KnowledgeMetadata metadata = new KnowledgeMetadata();
+            metadata.setJobId(jobId);
+            metadata.setFileName(fileName);
+            metadata.setSourceUrl(sourceUrl != null && !sourceUrl.isBlank() ? sourceUrl : url);
+            metadata.setStatus(com.example.backend.enums.KnowledgeStatus.PENDING);
+
+            KnowledgeMetadata saved = knowledgeRepository.save(metadata);
+
+            com.example.backend.dto.ProcessDocumentRequest request = new com.example.backend.dto.ProcessDocumentRequest(
+                    jobId,
+                    saved.getId(),
+                    url,
+                    fileName
+            );
+
+            rabbitTemplate.convertAndSend(
+                    com.example.backend.config.RabbitMQConfig.EXCHANGE_NAME,
+                    com.example.backend.config.RabbitMQConfig.DOCUMENT_ROUTING_KEY,
+                    request
+            );
+
+            return saved;
+        } catch (Exception e) {
+            log.error("Failed to ingest text document into Knowledge Base", e);
+            throw new RuntimeException("Repo ingest failed", e);
         }
     }
 

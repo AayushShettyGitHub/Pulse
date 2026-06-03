@@ -5,6 +5,7 @@ import {
   Activity, 
   CalendarCheck2, 
   Database,
+  GitBranch,
   LogOut,
   Zap,
   Sun,
@@ -27,6 +28,7 @@ export default function Sidebar() {
     { icon: Activity, label: "Uptime", path: "/uptime" },
     { icon: CalendarCheck2, label: "Attendance", path: "/attendance-stats" },
     { icon: Database, label: "Knowledge Base", path: "/knowledge" },
+    { icon: GitBranch, label: "GitHub Jobs", path: "/github-jobs" },
   ];
 
   const handleLogout = () => {

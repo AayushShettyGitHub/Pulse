@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getJobs, deleteJob } from "../api/jobs";
 import { uploadDocument, getKnowledgeByJob, askQuestion, deleteDocument } from "../api/knowledge";
+import { submitDocWebhook, getDocJobs, getDocArtifacts, downloadDocArtifact } from "../api/docAgent";
 import WorkspaceForm from "../components/WorkspaceForm";
 import toast from "react-hot-toast";
 
@@ -28,10 +29,25 @@ export default function KnowledgeBase() {
   const [chatHistory, setChatHistory] = useState([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
+  const [docJobs, setDocJobs] = useState([]);
+  const [docArtifacts, setDocArtifacts] = useState([]);
+  const [docForm, setDocForm] = useState({
+    repoName: "Pulse",
+    repoUrl: "",
+    commitSha: "",
+    commitMessage: "",
+    prNumber: "",
+    branchName: "",
+    changedFiles: "frontend/src/pages/KnowledgeBase.jsx\nbackend/src/main/java/com/example/backend/controller/DocAgentController.java",
+    diffSummary: "",
+  });
+  const [selectedDocJobId, setSelectedDocJobId] = useState("");
+  const [isDocSubmitting, setIsDocSubmitting] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
     fetchJobs();
+    fetchDocJobs();
   }, []);
 
   useEffect(() => {
@@ -76,6 +92,28 @@ export default function KnowledgeBase() {
       console.error("Failed to fetch knowledge", err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchDocJobs = async () => {
+    try {
+      const data = await getDocJobs();
+      setDocJobs(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch doc jobs", err);
+    }
+  };
+
+  const fetchDocArtifacts = async (jobId) => {
+    if (!jobId) {
+      setDocArtifacts([]);
+      return;
+    }
+    try {
+      const data = await getDocArtifacts(jobId);
+      setDocArtifacts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch doc artifacts", err);
     }
   };
 
@@ -160,6 +198,48 @@ export default function KnowledgeBase() {
     }
   };
 
+  const handleDocSubmit = async (e) => {
+    e.preventDefault();
+    if (!docForm.commitSha.trim() || !docForm.repoName.trim()) return;
+    setIsDocSubmitting(true);
+    const loadingToast = toast.loading("Generating documentation from commit...");
+    try {
+      const payload = {
+        ...docForm,
+        changedFiles: docForm.changedFiles.split("\n").map(s => s.trim()).filter(Boolean),
+        triggerType: "MANUAL",
+      };
+      await submitDocWebhook(payload);
+      toast.success("Documentation generated", { id: loadingToast });
+      await fetchDocJobs();
+    } catch (err) {
+      toast.error("Doc generation failed: " + (err.response?.data?.message || err.message), { id: loadingToast });
+    } finally {
+      setIsDocSubmitting(false);
+    }
+  };
+
+  const handleSelectDocJob = async (jobId) => {
+    setSelectedDocJobId(jobId);
+    await fetchDocArtifacts(jobId);
+  };
+
+  const handleDownloadArtifact = async (artifactId, fileName) => {
+    const loadingToast = toast.loading("Preparing download...");
+    try {
+      const blob = await downloadDocArtifact(artifactId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName || "documentation.md";
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Download ready", { id: loadingToast });
+    } catch (err) {
+      toast.error("Download failed", { id: loadingToast });
+    }
+  };
+
   const selectedWorkspaceName = jobs.find(j => j.id === selectedJobId)?.name;
 
   return (
@@ -178,6 +258,74 @@ export default function KnowledgeBase() {
           New Workspace
         </button>
       </header>
+
+      <div className="card" style={{ padding: "1.25rem", border: "1px solid rgba(2,132,199,0.12)", background: "linear-gradient(180deg, rgba(2,132,199,0.05), rgba(255,255,255,0.96))" }}>
+        <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: "1rem", marginBottom: "1rem" }}>
+          <div>
+            <h2 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-main)" }}>Doc-Agent</h2>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+              Generate updated Markdown docs from a commit or PR, using previous documentation as context.
+            </p>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <p style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Generated</p>
+            <p style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-main)" }}>{docJobs.length}</p>
+          </div>
+        </div>
+        <form onSubmit={handleDocSubmit} style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem" }}>
+          <input placeholder="Repo name" value={docForm.repoName} onChange={(e) => setDocForm(prev => ({ ...prev, repoName: e.target.value }))} />
+          <input placeholder="Repo URL" value={docForm.repoUrl} onChange={(e) => setDocForm(prev => ({ ...prev, repoUrl: e.target.value }))} />
+          <input placeholder="Commit SHA" value={docForm.commitSha} onChange={(e) => setDocForm(prev => ({ ...prev, commitSha: e.target.value }))} />
+          <input placeholder="PR number" value={docForm.prNumber} onChange={(e) => setDocForm(prev => ({ ...prev, prNumber: e.target.value }))} />
+          <input placeholder="Branch" value={docForm.branchName} onChange={(e) => setDocForm(prev => ({ ...prev, branchName: e.target.value }))} />
+          <textarea rows={4} placeholder="Changed files, one per line" value={docForm.changedFiles} onChange={(e) => setDocForm(prev => ({ ...prev, changedFiles: e.target.value }))} />
+          <textarea rows={4} style={{ gridColumn: "1 / -1" }} placeholder="Commit message or diff summary" value={docForm.commitMessage} onChange={(e) => setDocForm(prev => ({ ...prev, commitMessage: e.target.value }))} />
+          <textarea rows={4} style={{ gridColumn: "1 / -1" }} placeholder="Diff summary / change notes" value={docForm.diffSummary} onChange={(e) => setDocForm(prev => ({ ...prev, diffSummary: e.target.value }))} />
+          <button type="submit" className="btn-primary" disabled={isDocSubmitting} style={{ gridColumn: "1 / -1", justifySelf: "start" }}>
+            {isDocSubmitting ? "Generating..." : "Generate docs from commit"}
+          </button>
+        </form>
+      </div>
+
+      <div className="card" style={{ padding: "1rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+          <h2 style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700 }}>Doc Jobs</h2>
+          <button className="btn-primary" onClick={fetchDocJobs} style={{ padding: "0.4rem 0.75rem" }}>Refresh</button>
+        </div>
+        <div style={{ display: "grid", gap: "0.5rem" }}>
+          {docJobs.slice(0, 5).map(job => (
+            <button key={job.id} onClick={() => handleSelectDocJob(job.id)} style={{ textAlign: "left", padding: "0.75rem", borderRadius: "0.75rem", border: selectedDocJobId === job.id ? "1px solid var(--accent)" : "1px solid var(--border-color)", background: "white" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
+                <div>
+                  <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-main)" }}>{job.repoName}</p>
+                  <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{job.commitSha}</p>
+                </div>
+                <span className="badge badge-info">{job.status}</span>
+              </div>
+            </button>
+          ))}
+          {docJobs.length === 0 && <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>No document jobs yet.</p>}
+        </div>
+        {selectedDocJobId && (
+          <div style={{ marginTop: "1rem" }}>
+            <h3 style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "var(--text-muted)", fontWeight: 700, marginBottom: "0.5rem" }}>Artifacts</h3>
+            <div style={{ display: "grid", gap: "0.5rem" }}>
+              {docArtifacts.map(artifact => (
+                <div key={artifact.id} className="card" style={{ padding: "0.75rem", display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "center" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{artifact.title}</p>
+                    <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{artifact.fileName}</p>
+                  </div>
+                  <button className="btn-primary" onClick={() => handleDownloadArtifact(artifact.id, artifact.fileName)} style={{ padding: "0.4rem 0.75rem" }}>
+                    Download
+                  </button>
+                </div>
+              ))}
+              {docArtifacts.length === 0 && <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Select a job to view artifacts.</p>}
+            </div>
+          </div>
+        )}
+      </div>
 
       <AnimatePresence>
         {showCreateWorkspace && (

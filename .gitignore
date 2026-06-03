@@ -71,7 +71,8 @@ pnpm-lock.yaml
 *.sqlite
 *.sqlite3
 *.sql
-
+.env
+*.pem
 
 *.md
 # README.md

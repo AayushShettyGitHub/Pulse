@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Attendance from "./pages/Attendance";
 import KnowledgeBase from "./pages/KnowledgeBase";
+import GithubJobs from "./pages/GithubJobs";
 import UptimeMonitor from "./components/UptimeMonitor";
 import AttendanceTracker from "./components/AttendanceTracker";
 
@@ -60,6 +61,12 @@ function App() {
         <Route path="/knowledge" element={
           <ProtectedRoute>
             <KnowledgeBase />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/github-jobs" element={
+          <ProtectedRoute>
+            <GithubJobs />
           </ProtectedRoute>
         } />
 
